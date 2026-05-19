@@ -2,9 +2,9 @@ import { Route, Routes, Outlet } from 'react-router-dom';
 import { ThemeProvider } from '@material-tailwind/react';
 import { AuthProvider } from './contexts/AuthContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
+import { CartProvider } from './contexts/CartContext';
 import AdminRoute from './Components/AdminRoute';
 import Navbar from './Components/Navbar';
-import NewDetail from './pages/NewDetail';
 import MainPage from './pages/MainPage';
 import MainProductDetails from './pages/MainProductDetails';
 import CategoryPage from './pages/CategoryPage';
@@ -39,35 +39,36 @@ function App() {
   return (
     <AuthProvider>
       <FavoritesProvider>
-        <ThemeProvider>
-          <div className="bg-gray-950 min-h-screen">
-          <Routes>
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<MainPage />} />
-              <Route path="/carrinho" element={<Cart/>} />
-              <Route path="/novidade/:id" element={<NewDetail/>} />
-              <Route path="/produto/:id" element={<MainProductDetails/>}/>
-              <Route path="/perfil" element={<Profile/>}/>
-              <Route path="/categoria/:slug" element={<CategoryPage/>}/>
-              <Route path="/vistos-recentemente" element={<RecentlyViewed/>}/>
-              <Route path="/favoritos" element={<Favorites/>}/>
-              <Route path="/busca" element={<SearchResults/>}/>
-              <Route path="/login" element={<Login/>}/>
-              <Route path="/register" element={<Register/>}/>
-              <Route path="/perfil/editar" element={<EditProfile/>}/>
-              <Route path="/perfil/pedidos" element={<MyOrders/>}/>
-            </Route>
+        <CartProvider>
+          <ThemeProvider>
+            <div className="bg-gray-950 min-h-screen">
+              <Routes>
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<MainPage />} />
+                  <Route path="/carrinho" element={<Cart />} />
+                  <Route path="/produto/:id" element={<MainProductDetails />} />
+                  <Route path="/perfil" element={<Profile />} />
+                  <Route path="/categoria/:slug" element={<CategoryPage />} />
+                  <Route path="/vistos-recentemente" element={<RecentlyViewed />} />
+                  <Route path="/favoritos" element={<Favorites />} />
+                  <Route path="/busca" element={<SearchResults />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/perfil/editar" element={<EditProfile />} />
+                  <Route path="/perfil/pedidos" element={<MyOrders />} />
+                </Route>
 
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-              <Route index element={<AdminHome />} />
-              <Route path="pedidos" element={<AdminOrders />} />
-              <Route path="produtos" element={<AdminProducts />} />
-              <Route path="usuarios" element={<AdminUsers />} />
-            </Route>
-            </Routes>
-          </div>
-        </ThemeProvider>
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+                  <Route index element={<AdminHome />} />
+                  <Route path="pedidos" element={<AdminOrders />} />
+                  <Route path="produtos" element={<AdminProducts />} />
+                  <Route path="usuarios" element={<AdminUsers />} />
+                </Route>
+              </Routes>
+            </div>
+          </ThemeProvider>
+        </CartProvider>
       </FavoritesProvider>
     </AuthProvider>
   );

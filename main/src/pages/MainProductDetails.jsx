@@ -10,7 +10,7 @@ import { formatCategory } from '../utils/categories'
 import { useLoginPrompt } from '../hooks/useLoginPrompt'
 import LoginPromptModal from '../Components/LoginPromptModal'
 import { productsApi } from '../api/products'
-import { cartApi } from '../api/cart'
+import { useCart } from '../contexts/CartContext'
 import { extractErrorMessage } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -20,6 +20,7 @@ const formatBRL = (value) =>
 const ProductDetails = () => {
   const { id } = useParams()
   const { user } = useAuth()
+  const { addItem } = useCart()
   const [cep, setCep] = useState('')
   const [frete, setFrete] = useState(null)
   const [product, setProduct] = useState(null)
@@ -88,7 +89,7 @@ const ProductDetails = () => {
   const handleAddToCart = () =>
     requireAuth(async () => {
       try {
-        await cartApi.addItem(user.id, {
+        await addItem({
           productId: product.id,
           name: product.title,
           image: product.imageUrl || '/assets/652292.png',

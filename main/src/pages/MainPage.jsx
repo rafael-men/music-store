@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import Hero from '../Components/Hero'
-import ProductCard from '../Components/ProductCard'
+import ProductCarousel from '../Components/ProductCarousel'
 import { productsApi } from '../api/products'
 import { extractErrorMessage } from '../api/client'
 
@@ -19,7 +18,6 @@ const groupProducts = (products) => {
       (p.categories || []).some((c) => section.fallbackCategories.includes(c))
     )
   }
-  // Se uma seção não tiver produtos, mostra os primeiros do catálogo
   for (const section of sections) {
     if (groups[section.key].length === 0) {
       groups[section.key] = products.slice(0, 8)
@@ -52,28 +50,6 @@ const MainPage = () => {
 
   const groups = groupProducts(products)
 
-  const renderCarousel = ({ key, title }) => {
-    const items = groups[key] || []
-    if (items.length === 0) return null
-    return (
-      <section key={key} className="mb-14 mt-10">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold text-white">{title}</h2>
-          <Link to="/" className="text-xs text-gray-500 hover:text-gray-300 no-underline transition-colors duration-200">
-            Ver todos →
-          </Link>
-        </div>
-        <div className="flex gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {items.map((product) => (
-            <div key={product.id} className="snap-start shrink-0 w-52 sm:w-48 md:w-52 flex">
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
-      </section>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gray-950">
       <Hero />
@@ -99,7 +75,9 @@ const MainPage = () => {
           </div>
         )}
 
-        {!loading && !error && products.length > 0 && sections.map(renderCarousel)}
+        {!loading && !error && products.length > 0 && sections.map(({ key, title }) => (
+          <ProductCarousel key={key} title={title} items={groups[key] || []} />
+        ))}
       </div>
     </div>
   )

@@ -1,38 +1,69 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Navigation, Pagination } from 'swiper/modules'
 import 'swiper/swiper-bundle.css'
 import ProductImage from './ProductImage'
-
-const novidades = [
-  {
-    id: 1,
-    title: 'Black Metal',
-    description: 'Confira o novo lançamento de Rotting Christ: Pro Xristou',
-    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8AukWAiyyQTW3uBNhygp5HghEAfX3GNQ1DQ&s'
-  },
-  {
-    id: 2,
-    title: 'Pop de milhões',
-    description: 'Veja o que acabou de chegar da Lady Gaga só aqui na music store',
-    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsJa33CQNLroUqukn_C2LsZtAHBKGJO4pxRA&s'
-  },
-  {
-    id: 3,
-    title: 'Nu Metal',
-    description: 'Confira o album Ohms, Prepare-se para uma jornada sonora intensa',
-    imageUrl: 'https://i.scdn.co/image/ab6761610000e5eb4b2da0b72cab26ac518f1f0d'
-  },
-  {
-    id: 4,
-    title: 'Hard Rock',
-    description: 'Acabou de chegar o mais famoso álbum da banda Motley Crue.',
-    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjf-L5VQhhy4FqbGyD59v1DnzPg5pSaR7pmg&s'
-  }
-]
+import { productsApi } from '../api/products'
+import { generateCarousel } from '../api/carousel'
+import { formatCategory } from '../utils/categories'
 
 const Hero = () => {
   const navigate = useNavigate()
+  const [slides, setSlides] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    productsApi
+      .list()
+      .then(async (products) => {
+        if (cancelled) return
+        const sorted = [...products].sort((a, b) => {
+          const ad = new Date(a.createdAt || 0).getTime()
+          const bd = new Date(b.createdAt || 0).getTime()
+          return bd - ad
+        })
+        const latest = sorted.slice(0, 4)
+        if (latest.length === 0) {
+          setSlides([])
+          return
+        }
+        setSlides(latest.map((p) => ({
+          id: p.id,
+          title: p.title,
+          description: `Confira ${p.title}`,
+          imageUrl: null,
+          categories: p.categories,
+        })))
+
+        const enriched = await generateCarousel(latest)
+        if (cancelled) return
+        setSlides(enriched.map((p) => ({
+          id: p.id,
+          title: p.title,
+          description: p.description || `Confira ${p.title}`,
+          imageUrl: p.imageUrl || null,
+          categories: p.categories,
+        })))
+      })
+      .catch(() => { if (!cancelled) setSlides([]) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  if (loading && slides.length === 0) {
+    return (
+      <section className="w-full bg-gray-900 border-b border-gray-800" style={{ height: 'clamp(320px, 55vh, 600px)' }}>
+        <div className="w-full h-full flex items-center justify-center">
+          <p className="text-gray-500 text-sm">Carregando destaques...</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (slides.length === 0) return null
 
   return (
     <section className="w-full overflow-hidden hero-swiper">
@@ -70,43 +101,46 @@ const Hero = () => {
       `}</style>
       <Swiper
         modules={[Autoplay, Navigation, Pagination]}
-        autoplay={{ delay: 4000, disableOnInteraction: false }}
+        autoplay={{ delay: 5000, disableOnInteraction: false }}
         navigation
         pagination={{ clickable: true }}
-        loop
+        loop={slides.length > 1}
         slidesPerView={1}
         className="w-full"
       >
-        {novidades.map((novidade) => (
-          <SwiperSlide key={novidade.id}>
-            <div
-              className="relative w-full cursor-pointer"
-              style={{ height: 'clamp(320px, 55vh, 600px)' }}
-              onClick={() => navigate(`/novidade/${novidade.id}`)}
-            >
-              <ProductImage
-                src={novidade.imageUrl}
-                alt={novidade.title}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-                <span className="inline-block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
-                  Lançamento
-                </span>
-                <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2 drop-shadow">
-                  {novidade.title}
-                </h2>
-                <p className="text-gray-300 text-sm sm:text-base max-w-xl">
-                  {novidade.description}
-                </p>
-                <span className="inline-block mt-4 text-xs font-medium text-white bg-white/20 border border-white/30 backdrop-blur-sm px-4 py-1.5 rounded-full hover:bg-white/30 transition-colors duration-200">
-                  Ver detalhes →
-                </span>
+        {slides.map((slide) => {
+          const mainCategory = (slide.categories || [])[0]
+          return (
+            <SwiperSlide key={slide.id}>
+              <div
+                className="relative w-full cursor-pointer"
+                style={{ height: 'clamp(320px, 55vh, 600px)' }}
+                onClick={() => navigate(`/produto/${slide.id}`)}
+              >
+                <ProductImage
+                  src={slide.imageUrl}
+                  alt={slide.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+                  <span className="inline-block text-xs font-semibold uppercase tracking-widest text-gray-300 mb-2">
+                    {mainCategory ? formatCategory(mainCategory) : 'Destaque'}
+                  </span>
+                  <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+                    {slide.title}
+                  </h2>
+                  <p className="text-gray-200 text-sm sm:text-base max-w-xl drop-shadow">
+                    {slide.description}
+                  </p>
+                  <span className="inline-block mt-4 text-xs font-medium text-white bg-white/20 border border-white/30 backdrop-blur-sm px-4 py-1.5 rounded-full hover:bg-white/30 transition-colors duration-200">
+                    Ver detalhes →
+                  </span>
+                </div>
               </div>
-            </div>
-          </SwiperSlide>
-        ))}
+            </SwiperSlide>
+          )
+        })}
       </Swiper>
     </section>
   )

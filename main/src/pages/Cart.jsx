@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ShoppingCart, Trash2, ShoppingBag, Check, Truck, QrCode, LogIn, Plus, Minus } from 'lucide-react'
 import ProductImage from '../Components/ProductImage'
 import { useAuth } from '../contexts/AuthContext'
-import { cartApi } from '../api/cart'
+import { useCart } from '../contexts/CartContext'
 import { extractErrorMessage } from '../api/client'
 
 const formatBRL = (value) =>
@@ -30,9 +30,8 @@ const LoginRequired = () => (
   </div>
 )
 
-const CartContent = ({ userId }) => {
-  const [cart, setCart] = useState(null)
-  const [loading, setLoading] = useState(true)
+const CartContent = () => {
+  const { cart, loading, addItem, removeItem, clear } = useCart()
   const [error, setError] = useState('')
   const [updating, setUpdating] = useState(false)
 
@@ -41,25 +40,6 @@ const CartContent = ({ userId }) => {
   const [freteCalculado, setFreteCalculado] = useState(false)
   const [ordered, setOrdered] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    cartApi
-      .get(userId)
-      .then((data) => { if (!cancelled) setCart(data) })
-      .catch((err) => {
-        if (!cancelled) {
-          if (err?.response?.status === 404) {
-            setCart({ id: null, userId, items: [], total: 0 })
-          } else {
-            setError(extractErrorMessage(err, 'Falha ao carregar carrinho.'))
-          }
-        }
-      })
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [userId])
-
   const items = cart?.items || []
   const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
   const totalComFrete = subtotal + (frete ?? 0)
@@ -67,14 +47,13 @@ const CartContent = ({ userId }) => {
   const handleAddOne = async (item) => {
     setUpdating(true)
     try {
-      const updated = await cartApi.addItem(userId, {
+      await addItem({
         productId: item.productId,
         name: item.name,
         image: item.image,
         price: item.price,
         quantity: 1,
       })
-      setCart(updated)
     } catch (err) {
       setError(extractErrorMessage(err, 'Falha ao atualizar carrinho.'))
     } finally {
@@ -85,19 +64,15 @@ const CartContent = ({ userId }) => {
   const handleRemoveOne = async (item) => {
     setUpdating(true)
     try {
-      if (item.quantity <= 1) {
-        const updated = await cartApi.removeItem(userId, item.productId)
-        setCart(updated)
-      } else {
-        await cartApi.removeItem(userId, item.productId)
-        const updated = await cartApi.addItem(userId, {
+      await removeItem(item.productId)
+      if (item.quantity > 1) {
+        await addItem({
           productId: item.productId,
           name: item.name,
           image: item.image,
           price: item.price,
           quantity: item.quantity - 1,
         })
-        setCart(updated)
       }
     } catch (err) {
       setError(extractErrorMessage(err, 'Falha ao atualizar carrinho.'))
@@ -109,8 +84,7 @@ const CartContent = ({ userId }) => {
   const handleRemoveAll = async (item) => {
     setUpdating(true)
     try {
-      const updated = await cartApi.removeItem(userId, item.productId)
-      setCart(updated)
+      await removeItem(item.productId)
     } catch (err) {
       setError(extractErrorMessage(err, 'Falha ao remover item.'))
     } finally {
@@ -128,7 +102,7 @@ const CartContent = ({ userId }) => {
   const handleFinalize = async () => {
     setUpdating(true)
     try {
-      await cartApi.clear(userId)
+      await clear()
       setOrdered(true)
     } catch (err) {
       setError(extractErrorMessage(err, 'Falha ao finalizar pedido.'))
@@ -315,7 +289,7 @@ const CartContent = ({ userId }) => {
 const Cart = () => {
   const { isAuthenticated, user } = useAuth()
   return isAuthenticated && user?.id
-    ? <CartContent userId={user.id} />
+    ? <CartContent />
     : <LoginRequired />
 }
 

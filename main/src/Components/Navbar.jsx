@@ -3,6 +3,21 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ShoppingCart, User, Music2, Menu, X, Heart, Search, LogIn, LogOut } from 'lucide-react'
 import SearchBar from './SearchBar'
 import { useAuth } from '../contexts/AuthContext'
+import { useCart } from '../contexts/CartContext'
+
+const CartIcon = ({ size = 18 }) => {
+  const { itemCount } = useCart()
+  return (
+    <span className="relative inline-flex">
+      <ShoppingCart size={size} />
+      {itemCount > 0 && (
+        <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+          {itemCount > 99 ? '99+' : itemCount}
+        </span>
+      )}
+    </span>
+  )
+}
 
 const Navbar = () => {
   const navigate = useNavigate()
@@ -36,7 +51,7 @@ const Navbar = () => {
             <span>Favoritos</span>
           </Link>
           <Link to="/carrinho" className='flex items-center gap-2 text-sm font-medium no-underline text-gray-300 hover:text-white transition-colors duration-200'>
-            <ShoppingCart size={18} />
+            <CartIcon size={18} />
             <span>Carrinho</span>
           </Link>
 
@@ -102,7 +117,7 @@ const Navbar = () => {
             onClick={() => setMobileOpen(false)}
             className='flex items-center justify-center gap-2 py-2 no-underline text-gray-300 hover:text-white transition-colors'
           >
-            <ShoppingCart size={16} />
+            <CartIcon size={16} />
             <span>Carrinho</span>
           </Link>
 
