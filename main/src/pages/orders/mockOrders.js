@@ -1,0 +1,85 @@
+export const mockOrders = [
+  {
+    id: 'ord-2026-001',
+    items: [
+      { productId: 'p1', name: 'Rotting Christ - Pro Xristou (CD)', image: null, price: 89.90, quantity: 1 },
+      { productId: 'p2', name: 'Iron Maiden - The Number of the Beast (Vinyl)', image: null, price: 299.90, quantity: 1 },
+    ],
+    total: 389.80,
+    paymentMethod: 'PIX',
+    status: 'DELIVERED',
+    createdAt: '2026-04-02T14:32:00',
+    receipt: {
+      number: 'REC-2026-000001',
+      paidAt: '2026-04-02T14:35:12',
+      pixTxId: 'E10492061202604021435sA3bc9xKz',
+      payerName: 'Rafael Silva',
+      payerDocument: '123.456.789-00',
+    },
+    shipping: {
+      code: 'BR123456789MS',
+      carrier: 'Correios',
+      trackingUrl: 'https://rastreamento.correios.com.br/app/index.php',
+      address: 'Av. Paulista, 1000 - Bela Vista, São Paulo/SP - 01310-100',
+    },
+  },
+  {
+    id: 'ord-2026-002',
+    items: [
+      { productId: 'p3', name: 'Deftones - Ohms (Vinyl)', image: null, price: 259.90, quantity: 1 },
+    ],
+    total: 259.90,
+    paymentMethod: 'PIX',
+    status: 'SHIPPED',
+    createdAt: '2026-04-18T09:15:00',
+    receipt: {
+      number: 'REC-2026-000002',
+      paidAt: '2026-04-18T09:18:45',
+      pixTxId: 'E10492061202604180918aQ9pL2vR',
+      payerName: 'Rafael Silva',
+      payerDocument: '123.456.789-00',
+    },
+    shipping: {
+      code: 'BR987654321MS',
+      carrier: 'Correios',
+      trackingUrl: 'https://rastreamento.correios.com.br/app/index.php',
+      address: 'Av. Paulista, 1000 - Bela Vista, São Paulo/SP - 01310-100',
+    },
+  },
+  {
+    id: 'ord-2026-003',
+    items: [
+      { productId: 'p4', name: 'Lady Gaga - Mayhem (CD)', image: null, price: 69.90, quantity: 2 },
+      { productId: 'p5', name: 'Camiseta Oficial Iron Maiden - The Trooper', image: null, price: 89.90, quantity: 1 },
+    ],
+    total: 229.70,
+    paymentMethod: 'PIX',
+    status: 'CONFIRMED',
+    createdAt: '2026-04-20T18:47:00',
+    receipt: {
+      number: 'REC-2026-000003',
+      paidAt: '2026-04-20T18:52:33',
+      pixTxId: 'E10492061202604201852fM5nT8yK',
+      payerName: 'Rafael Silva',
+      payerDocument: '123.456.789-00',
+    },
+    shipping: {
+      code: null,
+      carrier: 'Correios',
+      trackingUrl: null,
+      address: 'Av. Paulista, 1000 - Bela Vista, São Paulo/SP - 01310-100',
+    },
+  },
+  {
+    id: 'ord-2026-004',
+    items: [
+      { productId: 'p6', name: 'Dream Theater - Metropolis Pt. 2 (CD)', image: null, price: 84.90, quantity: 1 },
+    ],
+    total: 84.90,
+    paymentMethod: 'PIX',
+    status: 'PENDING',
+    createdAt: '2026-04-22T08:12:00',
+    receipt: null,
+    shipping: null,
+  },
+]

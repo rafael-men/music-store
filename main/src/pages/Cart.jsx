@@ -5,6 +5,8 @@ import ProductImage from '../Components/ProductImage'
 import { useAuth } from '../contexts/AuthContext'
 import { useCart } from '../contexts/CartContext'
 import { extractErrorMessage } from '../api/client'
+import { calculateShipping, isValidCep, extractShippingError } from '../api/shipping-form'
+import { productsApi } from '../api/products'
 
 const formatBRL = (value) =>
   (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -38,6 +40,10 @@ const CartContent = () => {
   const [cep, setCep] = useState('')
   const [frete, setFrete] = useState(null)
   const [freteCalculado, setFreteCalculado] = useState(false)
+  const [freteOptions, setFreteOptions] = useState([])
+  const [freteSelected, setFreteSelected] = useState(null)
+  const [freteLoading, setFreteLoading] = useState(false)
+  const [freteError, setFreteError] = useState('')
   const [ordered, setOrdered] = useState(false)
 
   const items = cart?.items || []
@@ -92,11 +98,64 @@ const CartContent = () => {
     }
   }
 
-  const handleCalcularFrete = () => {
-    if (!cep || cep.replace(/\D/g, '').length < 8) return
-    const valor = 15.90
-    setFrete(valor)
-    setFreteCalculado(true)
+  const handleCepChange = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8)
+    const masked = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits
+    setCep(masked)
+    if (freteCalculado) {
+      setFreteCalculado(false)
+      setFrete(null)
+      setFreteOptions([])
+      setFreteSelected(null)
+    }
+  }
+
+  const handleSelectFrete = (option) => {
+    setFreteSelected(option.id)
+    setFrete(option.price)
+  }
+
+  const handleCalcularFrete = async () => {
+    setFreteError('')
+    if (!isValidCep(cep)) {
+      setFreteError('Digite um CEP válido (8 dígitos).')
+      return
+    }
+    if (items.length === 0) {
+      setFreteError('Adicione itens ao carrinho primeiro.')
+      return
+    }
+    setFreteLoading(true)
+    try {
+      const enriched = await Promise.all(
+        items.map(async (item) => {
+          try {
+            const product = await productsApi.get(item.productId)
+            return { ...item, categories: product?.categories || [] }
+          } catch {
+            return { ...item, categories: [] }
+          }
+        })
+      )
+      const results = await calculateShipping({ toCep: cep, items: enriched })
+      setFreteOptions(results)
+      if (results.length === 0) {
+        setFreteError('Nenhum serviço de entrega disponível para este CEP.')
+        setFrete(null)
+        setFreteCalculado(false)
+        return
+      }
+      setFreteSelected(results[0].id)
+      setFrete(results[0].price)
+      setFreteCalculado(true)
+    } catch (err) {
+      setFreteError(extractShippingError(err))
+      setFreteOptions([])
+      setFrete(null)
+      setFreteCalculado(false)
+    } finally {
+      setFreteLoading(false)
+    }
   }
 
   const handleFinalize = async () => {
@@ -222,22 +281,63 @@ const CartContent = () => {
                 <Truck size={13} className="inline mr-1.5 mb-0.5" />
                 Calcular Frete
               </p>
-              <div className="flex gap-2 mb-6">
+              <div className="flex gap-2 mb-3">
                 <input
                   type="text"
                   value={cep}
-                  onChange={(e) => setCep(e.target.value)}
+                  onChange={(e) => handleCepChange(e.target.value)}
                   placeholder="Digite seu CEP"
                   maxLength={9}
+                  inputMode="numeric"
                   className="flex-1 min-w-0 bg-gray-800 text-white placeholder-gray-500 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
                 />
                 <button
                   onClick={handleCalcularFrete}
-                  className="shrink-0 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-200"
+                  disabled={freteLoading}
+                  className="shrink-0 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-60"
                 >
-                  Calcular
+                  {freteLoading ? 'Calculando...' : 'Calcular'}
                 </button>
               </div>
+
+              {freteError && (
+                <p className="text-xs text-red-400 mb-3">{freteError}</p>
+              )}
+
+              {freteOptions.length > 0 && (
+                <div className="mb-6 max-h-56 overflow-y-auto pr-1 flex flex-col gap-1">
+                  {freteOptions.map((opt) => {
+                    const active = freteSelected === opt.id
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleSelectFrete(opt)}
+                        className={`text-left flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md border transition-colors ${
+                          active
+                            ? 'bg-green-500/10 border-green-500/40'
+                            : 'bg-gray-800/60 border-gray-700 hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs text-white font-medium leading-tight truncate">
+                            {opt.company} {opt.name}
+                          </p>
+                          <p className="text-[10px] text-gray-400 leading-tight">
+                            {opt.deliveryTime
+                              ? `${opt.deliveryTime} ${opt.deliveryTime === 1 ? 'dia útil' : 'dias úteis'}`
+                              : 'Prazo a confirmar'}
+                          </p>
+                        </div>
+                        <span className={`text-xs font-bold shrink-0 ${active ? 'text-green-400' : 'text-gray-200'}`}>
+                          {formatBRL(opt.price)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {freteOptions.length === 0 && <div className="mb-3" />}
               <div className="space-y-2 mb-6 pb-4 border-b border-gray-800">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Subtotal</span>

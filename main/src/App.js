@@ -18,12 +18,12 @@ import SearchResults from './pages/SearchResults';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import EditProfile from './pages/auth/EditProfile';
-import MyOrders from './pages/MyOrders';
+import MyOrders from './pages/orders/MyOrders';
 import AdminLogin from './admin/pages/AdminLogin';
 import AdminLayout from './admin/components/AdminLayout';
 import AdminHome from './admin/pages/AdminHome';
-import AdminOrders from './admin/pages/AdminOrders';
-import AdminProducts from './admin/pages/AdminProducts';
+import AdminOrders from './admin/pages/orders/AdminOrders';
+import AdminProducts from './admin/pages/products/AdminProducts';
 import AdminUsers from './admin/pages/AdminUsers';
 
 const PublicLayout = () => (

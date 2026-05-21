@@ -246,7 +246,3 @@ Cada serviço expõe Swagger em sua porta:
 - Cart: [http://localhost:8082/swagger-ui.html](http://localhost:8082/swagger-ui.html)
 - Orders: [http://localhost:8084/swagger-ui.html](http://localhost:8084/swagger-ui.html)
 - Notifications: [http://localhost:8085/swagger-ui.html](http://localhost:8085/swagger-ui.html)
-
-⚠️ Em produção, o `InternalSecretFilter` bloqueia acesso direto às portas dos serviços; o Swagger fica liberado apenas para desenvolvimento.
-
-

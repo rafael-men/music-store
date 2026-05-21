@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card } from 'primereact/card'
-import { Heart } from 'lucide-react'
+import { Heart, ShoppingCart, Check } from 'lucide-react'
 import ProductImage from './ProductImage'
 import { formatCategory } from '../utils/categories'
 import { useFavorites } from '../contexts/FavoritesContext'
+import { useCart } from '../contexts/CartContext'
 import { useLoginPrompt } from '../hooks/useLoginPrompt'
+import { extractErrorMessage } from '../api/client'
 import LoginPromptModal from './LoginPromptModal'
 
 const formatPrice = (value) => {
@@ -17,7 +20,12 @@ const formatPrice = (value) => {
 const ProductCard = ({ product }) => {
   const { toggle, isFavorite } = useFavorites()
   const favorited = isFavorite(product.id)
+  const { addItem } = useCart()
   const { requireAuth, open, close, config } = useLoginPrompt()
+  const [added, setAdded] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const stock = product.stockQuantity ?? product.stock ?? 0
+  const outOfStock = stock === 0
 
   const handleFavorite = (e) => {
     e.preventDefault()
@@ -25,6 +33,32 @@ const ProductCard = ({ product }) => {
     requireAuth(() => toggle(product.id), {
       title: 'Faça login para favoritar',
       message: 'Você precisa estar logado para adicionar produtos aos favoritos.',
+    })
+  }
+
+  const handleAddToCart = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    requireAuth(async () => {
+      setAdding(true)
+      try {
+        await addItem({
+          productId: product.id,
+          name: product.title,
+          image: product.imageUrl || '/assets/652292.png',
+          price: product.price,
+          quantity: 1,
+        })
+        setAdded(true)
+        setTimeout(() => setAdded(false), 2000)
+      } catch (err) {
+        alert(extractErrorMessage(err, 'Falha ao adicionar ao carrinho.'))
+      } finally {
+        setAdding(false)
+      }
+    }, {
+      title: 'Faça login para adicionar ao carrinho',
+      message: 'Você precisa estar logado para adicionar produtos ao carrinho.',
     })
   }
 
@@ -54,12 +88,27 @@ const ProductCard = ({ product }) => {
           </div>
         }
         footer={
-          <Link
-            to={`/produto/${product.id}`}
-            className="block text-center no-underline text-[11px] font-medium bg-white text-black py-1.5 px-3 rounded-md hover:bg-gray-200 transition-colors duration-200"
-          >
-            Ver Detalhes
-          </Link>
+          <div className="flex items-stretch gap-1.5">
+            <Link
+              to={`/produto/${product.id}`}
+              className="flex-1 text-center no-underline text-[11px] font-medium bg-white text-black py-1.5 px-2 rounded-md hover:bg-gray-200 transition-colors duration-200"
+            >
+              Ver Detalhes
+            </Link>
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={adding || outOfStock}
+              aria-label={outOfStock ? 'Sem estoque' : 'Adicionar ao carrinho'}
+              className={`shrink-0 inline-flex items-center justify-center w-8 rounded-md border transition-colors duration-200 ${
+                added
+                  ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                  : 'border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed'
+              }`}
+            >
+              {added ? <Check size={13} /> : <ShoppingCart size={13} />}
+            </button>
+          </div>
         }
         pt={{
           root:    { className: 'group h-full flex flex-col rounded-xl border border-gray-800 bg-gray-900 overflow-hidden hover:border-gray-600 hover:shadow-lg hover:shadow-black/50 hover:-translate-y-0.5 transition-all duration-300 cursor-default' },

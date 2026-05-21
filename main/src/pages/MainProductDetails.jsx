@@ -13,6 +13,7 @@ import { productsApi } from '../api/products'
 import { useCart } from '../contexts/CartContext'
 import { extractErrorMessage } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
+import { calculateShipping, isValidCep, extractShippingError } from '../api/shipping-form'
 
 const formatBRL = (value) =>
   (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -22,7 +23,9 @@ const ProductDetails = () => {
   const { user } = useAuth()
   const { addItem } = useCart()
   const [cep, setCep] = useState('')
-  const [frete, setFrete] = useState(null)
+  const [freteOptions, setFreteOptions] = useState([])
+  const [freteLoading, setFreteLoading] = useState(false)
+  const [freteError, setFreteError] = useState('')
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
@@ -106,9 +109,39 @@ const ProductDetails = () => {
       message: 'Você precisa estar logado para adicionar produtos ao carrinho.',
     })
 
-  const handleFrete = () => {
-    if (!cep || cep.length < 8) { alert('Por favor, insira um CEP válido.'); return }
-    setFrete(15.0)
+  const handleCepChange = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8)
+    const masked = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits
+    setCep(masked)
+  }
+
+  const handleFrete = async () => {
+    setFreteError('')
+    if (!isValidCep(cep)) {
+      setFreteError('Digite um CEP válido (8 dígitos).')
+      return
+    }
+    if (!product) return
+    setFreteLoading(true)
+    try {
+      const results = await calculateShipping({
+        toCep: cep,
+        items: [{
+          productId: product.id,
+          name: product.title,
+          price: product.price,
+          quantity: 1,
+          categories: product.categories || [],
+        }],
+      })
+      setFreteOptions(results)
+      if (results.length === 0) setFreteError('Nenhum serviço de entrega disponível para este CEP.')
+    } catch (err) {
+      setFreteError(extractShippingError(err))
+      setFreteOptions([])
+    } finally {
+      setFreteLoading(false)
+    }
   }
 
   if (loading) {
@@ -191,22 +224,46 @@ const ProductDetails = () => {
                   <input
                     type="text"
                     value={cep}
-                    onChange={(e) => setCep(e.target.value)}
+                    onChange={(e) => handleCepChange(e.target.value)}
                     placeholder="Digite seu CEP"
                     maxLength={9}
+                    inputMode="numeric"
                     className="flex-1 min-w-0 bg-gray-800 text-white placeholder-gray-500 border border-gray-600 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-gray-400"
                   />
                   <button
                     onClick={handleFrete}
-                    className="shrink-0 bg-yellow-500 text-white font-semibold py-2 px-5 rounded-full hover:bg-yellow-400 transition-colors duration-200 text-sm"
+                    disabled={freteLoading}
+                    className="shrink-0 bg-yellow-500 text-white font-semibold py-2 px-5 rounded-full hover:bg-yellow-400 transition-colors duration-200 text-sm disabled:opacity-60"
                   >
-                    Calcular
+                    {freteLoading ? 'Calculando...' : 'Calcular'}
                   </button>
                 </div>
-                {frete !== null && (
-                  <Typography className="text-green-400 text-sm mt-3">
-                    Frete: <strong>R$ {frete.toFixed(2)} — SEDEX, até 2 dias úteis</strong>
-                  </Typography>
+                {freteError && (
+                  <Typography className="text-red-400 text-xs mt-3">{freteError}</Typography>
+                )}
+                {freteOptions.length > 0 && (
+                  <div className="mt-3 max-h-56 overflow-y-auto pr-1 flex flex-col gap-1">
+                    {freteOptions.map((opt) => (
+                      <div
+                        key={opt.id}
+                        className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md bg-gray-800/60 border border-gray-700"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs text-white font-medium leading-tight truncate">
+                            {opt.company} {opt.name}
+                          </p>
+                          <p className="text-[10px] text-gray-400 leading-tight">
+                            {opt.deliveryTime
+                              ? `${opt.deliveryTime} ${opt.deliveryTime === 1 ? 'dia útil' : 'dias úteis'}`
+                              : 'Prazo a confirmar'}
+                          </p>
+                        </div>
+                        <span className="text-xs font-bold shrink-0 text-green-400">
+                          {formatBRL(opt.price)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
