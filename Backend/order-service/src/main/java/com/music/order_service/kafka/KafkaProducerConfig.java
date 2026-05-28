@@ -20,22 +20,32 @@ public class KafkaProducerConfig {
     private String bootstrapServers;
 
     @Bean
-    public ProducerFactory<String, OrderCreatedEvent> producerFactory() {
+    public ProducerFactory<String, Object> producerFactory() {
         return new DefaultKafkaProducerFactory<>(Map.of(
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers,
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class,
+                ProducerConfig.ACKS_CONFIG, "all",
+                ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true,
+                ProducerConfig.RETRIES_CONFIG, 5,
+                ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5,
+                ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 30000
         ));
     }
 
     @Bean
-    public KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate(
-            ProducerFactory<String, OrderCreatedEvent> producerFactory) {
+    public KafkaTemplate<String, Object> kafkaTemplate(
+            ProducerFactory<String, Object> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
     public NewTopic orderCreatedTopic() {
         return new NewTopic(KafkaTopics.ORDER_CREATED, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic orderStatusChangedTopic() {
+        return new NewTopic(KafkaTopics.ORDER_STATUS_CHANGED, 1, (short) 1);
     }
 }

@@ -15,6 +15,7 @@ const Categories = () => {
     { name: 'Vinil',                     link: '/categoria/vinil' },
     { name: 'CDs Importados e Nacionais',link: '/categoria/cds-importados-e-nacionais' },
     { name: 'Nu Metal',                  link: '/categoria/nu-metal' },
+    { name: 'Metal Progressivo',         link: '/categoria/metal-progressivo' },
   ];
 
   return (

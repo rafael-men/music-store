@@ -2,7 +2,9 @@ spring:
   application:
     name: api-gateway
 jwt:
-  secret: c2VjdXJlLXNlY3JldC1rZXktZm9yLW11c2ljLW1lcmNoYW5kaXNpbmctYXBwLW11c3QtYmUtYXQtbGVhc3QtMjU2LWJpdHM=
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:music-store}
+  audience: ${JWT_AUDIENCE:music-store-api}
 
 internal:
   secret: dev-internal-secret-change-me

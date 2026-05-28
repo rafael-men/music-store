@@ -109,9 +109,6 @@ music-merchandising-app/
 cd Backend
 docker compose up -d --build
 ```
-
-⏱️ Primeiro build leva ~5–10 min (Maven baixa dependências). Builds seguintes usam cache de layer.
-
 Verifique se está tudo healthy:
 
 ```bash

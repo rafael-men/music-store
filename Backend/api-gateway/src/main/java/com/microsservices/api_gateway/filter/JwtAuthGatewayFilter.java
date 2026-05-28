@@ -31,6 +31,12 @@ public class JwtAuthGatewayFilter {
     @Value("${jwt.secret}")
     private String secretKey;
 
+    @Value("${jwt.issuer}")
+    private String issuer;
+
+    @Value("${jwt.audience}")
+    private String audience;
+
     @Value("${internal.secret}")
     private String internalSecret;
 
@@ -52,13 +58,13 @@ public class JwtAuthGatewayFilter {
             try {
                 String token = authHeader.substring(7);
                 Claims claims = extractClaims(token);
-                String userId = claims.get("userId", String.class);
+                String userId = claims.getSubject();
+                String email = claims.get("email", String.class);
                 String role = claims.get("role", String.class);
-                String subject = claims.getSubject();
 
                 ServerRequest mutatedRequest = ServerRequest.from(request)
                         .header("X-User-Id", userId != null ? userId : "")
-                        .header("X-User-Email", subject != null ? subject : "")
+                        .header("X-User-Email", email != null ? email : "")
                         .header("X-User-Role", role != null ? role : "USER")
                         .header("X-Internal-Secret", internalSecret)
                         .build();
@@ -93,6 +99,8 @@ public class JwtAuthGatewayFilter {
         SecretKey key = Keys.hmacShaKeyFor(keyBytes);
         return Jwts.parser()
                 .verifyWith(key)
+                .requireIssuer(issuer)
+                .requireAudience(audience)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

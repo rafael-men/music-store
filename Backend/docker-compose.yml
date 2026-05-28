@@ -1,3 +1,8 @@
+x-jwt-env: &jwt-env
+  JWT_SECRET: c2VjdXJlLXNlY3JldC1rZXktZm9yLW11c2ljLW1lcmNoYW5kaXNpbmctYXBwLW11c3QtYmUtYXQtbGVhc3QtMjU2LWJpdHM=
+  JWT_ISSUER: music-store
+  JWT_AUDIENCE: music-store-api
+
 services:
   auth-db:
     image: postgres:16-alpine
@@ -78,6 +83,8 @@ services:
     build:
       context: ./auth-service
     container_name: auth-service
+    environment:
+      <<: *jwt-env
     depends_on:
       auth-db:
         condition: service_healthy
@@ -182,6 +189,8 @@ services:
     build:
       context: ./api-gateway
     container_name: api-gateway
+    environment:
+      <<: *jwt-env
     depends_on:
       eureka-server:
         condition: service_healthy

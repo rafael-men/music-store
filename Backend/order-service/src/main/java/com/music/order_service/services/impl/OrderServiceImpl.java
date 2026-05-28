@@ -5,13 +5,15 @@ import com.music.order_service.dtos.OrderResponseDTO;
 import com.music.order_service.dtos.TrackingUpdateDTO;
 import com.music.order_service.exceptions.OrderNotFoundException;
 import com.music.order_service.kafka.OrderCreatedEvent;
-import com.music.order_service.kafka.OrderEventPublisher;
+import com.music.order_service.kafka.OrderStatusChangedEvent;
 import com.music.order_service.models.Order;
 import com.music.order_service.models.OrderItem;
 import com.music.order_service.models.OrderStatus;
 import com.music.order_service.repositories.OrderRepository;
 import com.music.order_service.services.OrderService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,14 +22,15 @@ import java.util.List;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderEventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public OrderServiceImpl(OrderRepository orderRepository, OrderEventPublisher eventPublisher) {
+    public OrderServiceImpl(OrderRepository orderRepository, ApplicationEventPublisher eventPublisher) {
         this.orderRepository = orderRepository;
         this.eventPublisher = eventPublisher;
     }
 
     @Override
+    @Transactional
     public OrderResponseDTO create(OrderRequestDTO dto) {
         if (dto.paymentMethod() != com.music.order_service.models.PaymentMethod.PIX) {
             throw new IllegalArgumentException("Apenas pagamento via PIX é aceito.");
@@ -39,7 +42,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = new Order(null, dto.userId(), items, total, dto.paymentMethod());
         Order saved = orderRepository.save(order);
 
-        eventPublisher.publishOrderCreated(new OrderCreatedEvent(
+        eventPublisher.publishEvent(new OrderCreatedEvent(
                 saved.getId(),
                 saved.getUserId(),
                 saved.getTotal(),
@@ -66,20 +69,29 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderResponseDTO updateStatus(String id, OrderStatus status) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
+        OrderStatus oldStatus = order.getStatus();
+        if (oldStatus == status) {
+            return OrderResponseDTO.from(order);
+        }
         order.setStatus(status);
         if (status == OrderStatus.SHIPPED && order.getShippedAt() == null) {
             order.setShippedAt(LocalDateTime.now());
         }
-        return OrderResponseDTO.from(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        publishStatusChanged(saved, oldStatus);
+        return OrderResponseDTO.from(saved);
     }
 
     @Override
+    @Transactional
     public OrderResponseDTO updateTracking(String id, TrackingUpdateDTO dto) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
+        OrderStatus oldStatus = order.getStatus();
         order.setTrackingCode(dto.trackingCode());
         order.setCarrier(dto.carrier());
         order.setTrackingUrl(dto.trackingUrl());
@@ -89,6 +101,21 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() == OrderStatus.PENDING || order.getStatus() == OrderStatus.CONFIRMED) {
             order.setStatus(OrderStatus.SHIPPED);
         }
-        return OrderResponseDTO.from(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        if (oldStatus != saved.getStatus()) {
+            publishStatusChanged(saved, oldStatus);
+        }
+        return OrderResponseDTO.from(saved);
+    }
+
+    private void publishStatusChanged(Order order, OrderStatus oldStatus) {
+        eventPublisher.publishEvent(new OrderStatusChangedEvent(
+                order.getId(),
+                order.getUserId(),
+                oldStatus.name(),
+                order.getStatus().name(),
+                order.getTrackingCode(),
+                order.getCarrier()
+        ));
     }
 }

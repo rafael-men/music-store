@@ -14,6 +14,7 @@ public record UpdateUserRequest(
                 message = "A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial"
         )
         String password,
+        String currentPassword,
         String cpf,
         String profilePhotoUrl,
         AddressDTO address

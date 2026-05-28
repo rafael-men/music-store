@@ -5,15 +5,31 @@ import ProductCarousel from '../Components/ProductCarousel'
 import { productsApi } from '../api/products'
 import { extractErrorMessage } from '../api/client'
 
+const DEALS_PRICE_LIMIT = 100
+
 const sections = [
   { key: 'NEW_ARRIVALS', title: 'Recém Chegados',          fallbackCategories: ['NEW_ARRIVALS'] },
   { key: 'DEATH_METAL',  title: 'Baseado no que você viu', fallbackCategories: ['DEATH_METAL', 'BLACK_METAL'] },
   { key: 'DAILY_DEALS',  title: 'Ofertas da Semana',        fallbackCategories: ['DAILY_DEALS'] },
 ]
 
+const isDeal = (product) => {
+  const cats = product.categories || []
+  if (cats.includes('DAILY_DEALS')) return true
+  if (typeof product.price === 'number' && product.price > 0 && product.price <= DEALS_PRICE_LIMIT) return true
+  return false
+}
+
 const groupProducts = (products) => {
   const groups = {}
   for (const section of sections) {
+    if (section.key === 'DAILY_DEALS') {
+      groups[section.key] = products
+        .filter(isDeal)
+        .sort((a, b) => (a.price || 0) - (b.price || 0))
+        .slice(0, 12)
+      continue
+    }
     groups[section.key] = products.filter((p) =>
       (p.categories || []).some((c) => section.fallbackCategories.includes(c))
     )

@@ -6,6 +6,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
@@ -20,5 +22,16 @@ public class CustomUserDetailsService implements UserDetailsService {
         return userRepository.findByEmail(email)
                 .map(CustomUserDetails::new)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com email: " + email));
+    }
+
+    public UserDetails loadUserById(String id) throws UsernameNotFoundException {
+        try {
+            UUID userId = UUID.fromString(id);
+            return userRepository.findById(userId)
+                    .map(CustomUserDetails::new)
+                    .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com id: " + id));
+        } catch (IllegalArgumentException ex) {
+            throw new UsernameNotFoundException("ID de usuário inválido: " + id);
+        }
     }
 }

@@ -4,13 +4,17 @@ import { formatCategory } from '../utils/categories'
 const GROQ_API_KEY = process.env.REACT_APP_GROQ_API_KEY
 const RAPIDAPI_KEY = process.env.REACT_APP_RAPIDAPI_KEY
 
-const CACHE_KEY = 'carousel_cache_v1'
-const QUERY_CACHE_KEY = 'carousel_query_cache_v1'
+const CACHE_KEY = 'carousel_cache_v2'
+const QUERY_CACHE_KEY = 'carousel_query_cache_v2'
 const RATE_LIMITED_KEY = 'carousel_rate_limited_until'
+const CACHE_TTL_MS = 4 * 24 * 60 * 60 * 1000
+
+const isFresh = (entry) =>
+  !!entry?.cachedAt && (Date.now() - entry.cachedAt) < CACHE_TTL_MS
 
 const loadCache = () => {
   try {
-    return JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}')
+    return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}')
   } catch {
     return {}
   }
@@ -18,13 +22,13 @@ const loadCache = () => {
 
 const saveCache = (cache) => {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(cache))
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache))
   } catch { }
 }
 
 const loadQueryCache = () => {
   try {
-    return JSON.parse(sessionStorage.getItem(QUERY_CACHE_KEY) || '{}')
+    return JSON.parse(localStorage.getItem(QUERY_CACHE_KEY) || '{}')
   } catch {
     return {}
   }
@@ -32,18 +36,18 @@ const loadQueryCache = () => {
 
 const saveQueryCache = (cache) => {
   try {
-    sessionStorage.setItem(QUERY_CACHE_KEY, JSON.stringify(cache))
+    localStorage.setItem(QUERY_CACHE_KEY, JSON.stringify(cache))
   } catch { }
 }
 
 const isRateLimited = () => {
-  const until = Number(sessionStorage.getItem(RATE_LIMITED_KEY) || 0)
+  const until = Number(localStorage.getItem(RATE_LIMITED_KEY) || 0)
   return until > Date.now()
 }
 
 const setRateLimited = (durationMs = 5 * 60 * 1000) => {
   try {
-    sessionStorage.setItem(RATE_LIMITED_KEY, String(Date.now() + durationMs))
+    localStorage.setItem(RATE_LIMITED_KEY, String(Date.now() + durationMs))
   } catch { }
 }
 
@@ -120,7 +124,7 @@ const buildImageQuery = (product) => {
 
 const fetchCandidatesForQuery = async (query) => {
   const cache = loadQueryCache()
-  if (cache[query]) return cache[query]
+  if (isFresh(cache[query])) return cache[query].urls
 
   if (isRateLimited()) return []
 
@@ -133,7 +137,7 @@ const fetchCandidatesForQuery = async (query) => {
       const urls = results
         .map((r) => r?.urls?.regular || r?.urls?.full)
         .filter(Boolean)
-      cache[query] = urls
+      cache[query] = { urls, cachedAt: Date.now() }
       saveQueryCache(cache)
       return urls
     } catch (err) {
@@ -199,27 +203,35 @@ export const generateCarousel = async (products) => {
 
   const stages = products.map((product) => {
     const cached = cache[product.id]
-    if (cached?.description && cached?.imageUrl) {
+    const hasFullCache = cached?.description && cached?.imageUrl && isFresh(cached)
+    if (hasFullCache) {
       usedImages.add(normalizeUrl(cached.imageUrl))
       return { product, cached, fromCache: true }
     }
+    if (cached?.imageUrl) usedImages.add(normalizeUrl(cached.imageUrl))
     return { product, cached, fromCache: false }
   })
 
-  const fetchedStages = await Promise.all(
-    stages.map(async (stage) => {
-      if (stage.fromCache) return stage
-      const [description, candidates] = await Promise.all([
-        stage.cached?.description
-          ? Promise.resolve(stage.cached.description)
-          : generateDescription(stage.product),
-        stage.cached?.imageUrl
-          ? Promise.resolve([stage.cached.imageUrl])
-          : searchImageCandidates(stage.product),
-      ])
-      return { ...stage, description, candidates }
-    })
-  )
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+  const fetchedStages = []
+  let firstFetch = true
+  for (const stage of stages) {
+    if (stage.fromCache) {
+      fetchedStages.push(stage)
+      continue
+    }
+    if (!firstFetch) await sleep(250)
+    firstFetch = false
+    const [description, candidates] = await Promise.all([
+      stage.cached?.description
+        ? Promise.resolve(stage.cached.description)
+        : generateDescription(stage.product),
+      stage.cached?.imageUrl
+        ? Promise.resolve([stage.cached.imageUrl])
+        : searchImageCandidates(stage.product),
+    ])
+    fetchedStages.push({ ...stage, description, candidates })
+  }
 
   const enriched = fetchedStages.map((stage) => {
     if (stage.fromCache) {
@@ -227,11 +239,14 @@ export const generateCarousel = async (products) => {
     }
     const imageUrl = pickUniqueImage(stage.candidates, usedImages)
     const next = {
-      description: stage.description || stage.cached?.description,
+      description: stage.description || stage.cached?.description || null,
       imageUrl: imageUrl || stage.cached?.imageUrl || null,
+      cachedAt: Date.now(),
     }
-    cache[stage.product.id] = next
-    cacheChanged = true
+    if (next.description || next.imageUrl) {
+      cache[stage.product.id] = next
+      cacheChanged = true
+    }
     return { ...stage.product, ...next }
   })
 

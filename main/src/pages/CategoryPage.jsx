@@ -14,6 +14,7 @@ const categoryMeta = {
   'vinil':                     { label: 'Vinil',                        category: 'VINYL',                 accent: 'text-blue-400',    border: 'border-blue-500/20',   description: 'A experiência analógica e o som quente do vinil.' },
   'cds-importados-e-nacionais':{ label: 'CDs Importados e Nacionais',   category: 'CD',                    accent: 'text-cyan-400',    border: 'border-cyan-500/20',   description: 'CDs originais importados e nacionais.' },
   'nu-metal':                  { label: 'Nu Metal',                     category: 'NU_METAL',              accent: 'text-green-400',   border: 'border-green-500/20',  description: 'A fusão pesada de metal, rap e rock alternativo.' },
+  'metal-progressivo':         { label: 'Metal Progressivo',            category: 'PROG_METAL',            accent: 'text-indigo-400',  border: 'border-indigo-500/20', description: 'Estruturas complexas, virtuosismo técnico e atmosferas conceituais.' },
 }
 
 const CategoryPage = () => {

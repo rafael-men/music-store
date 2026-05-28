@@ -21,8 +21,10 @@ spring:
     locations: classpath:db/migration
 
 jwt:
-  secret: c2VjdXJlLXNlY3JldC1rZXktZm9yLW11c2ljLW1lcmNoYW5kaXNpbmctYXBwLW11c3QtYmUtYXQtbGVhc3QtMjU2LWJpdHM=
+  secret: ${JWT_SECRET}
   expiration: 86400000
+  issuer: ${JWT_ISSUER:music-store}
+  audience: ${JWT_AUDIENCE:music-store-api}
 
 server:
   port: 8081

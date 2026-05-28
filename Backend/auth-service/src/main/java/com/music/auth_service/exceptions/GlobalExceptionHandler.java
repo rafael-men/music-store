@@ -52,6 +52,13 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(401, "Unauthorized", "Email ou senha inválidos"));
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(401, "Unauthorized", ex.getMessage()));
+    }
+
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AuthorizationDeniedException ex) {
         return ResponseEntity

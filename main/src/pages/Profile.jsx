@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Package, Bell, ChevronRight, LogOut, Pencil, LogIn, User as UserIcon } from 'lucide-react'
+import { Package, ChevronRight, LogOut, Pencil, LogIn, User as UserIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { authApi } from '../api/auth'
+import NotificationsCard from './profile/NotificationsCard'
 
 const DEFAULT_PHOTO = 'https://i.pinimg.com/736x/c0/74/9b/c0749b7cc401421662ae901ec8f9f660.jpg'
 
@@ -52,8 +53,7 @@ const ProfileContent = ({ authUser, onLogout }) => {
   }, [authUser?.id])
 
   const menuItems = [
-    { label: 'Meus Pedidos',        Icon: Package, to: '/perfil/pedidos' },
-    { label: 'Notificações',        Icon: Bell },
+    { label: 'Meus Pedidos', Icon: Package, to: '/perfil/pedidos' },
   ]
 
   return (
@@ -98,6 +98,8 @@ const ProfileContent = ({ authUser, onLogout }) => {
             )
           })}
         </div>
+
+        <NotificationsCard userId={authUser?.id} />
 
         <button
           onClick={onLogout}

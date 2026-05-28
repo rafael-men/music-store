@@ -75,6 +75,15 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
+        boolean changingEmail = request.email() != null && !request.email().equals(user.getEmail());
+        boolean changingPassword = request.password() != null;
+        if (changingEmail || changingPassword) {
+            if (request.currentPassword() == null
+                    || !passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+                throw new InvalidCredentialsException("Senha atual obrigatória e deve ser válida para alterar email ou senha.");
+            }
+        }
+
         applyEmailUpdate(request, user);
         applyCpfUpdate(request, user);
 

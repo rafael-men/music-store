@@ -44,9 +44,10 @@ public class AuthController {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Map<String, Object> claims = Map.of(
                 "userId", userDetails.getId().toString(),
+                "email", userDetails.getUsername(),
                 "role", userResponse.role().name()
         );
-        String token = jwtService.generateToken(claims, userDetails);
+        String token = jwtService.generateToken(userDetails.getId().toString(), claims);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new AuthResponse(
                 token,
@@ -66,9 +67,10 @@ public class AuthController {
         User user = userDetails.getUser();
         Map<String, Object> claims = Map.of(
                 "userId", user.getId().toString(),
+                "email", user.getEmail(),
                 "role", user.getRole().name()
         );
-        String token = jwtService.generateToken(claims, userDetails);
+        String token = jwtService.generateToken(user.getId().toString(), claims);
 
         return ResponseEntity.ok(new AuthResponse(
                 token,

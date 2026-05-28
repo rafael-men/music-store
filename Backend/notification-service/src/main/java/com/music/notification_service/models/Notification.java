@@ -1,6 +1,7 @@
 package com.music.notification_service.models;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,8 @@ public class Notification {
     @Id
     private String id;
     private String userId;
+    @Indexed(unique = true, sparse = true)
+    private String dedupKey;
     private String message;
     private NotificationType type;
     private boolean read;
@@ -28,6 +31,24 @@ public class Notification {
         this.type = type;
         this.read = false;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public Notification(String id, String userId, String dedupKey, String message, NotificationType type) {
+        this.id = id;
+        this.userId = userId;
+        this.dedupKey = dedupKey;
+        this.message = message;
+        this.type = type;
+        this.read = false;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public String getDedupKey() {
+        return dedupKey;
+    }
+
+    public void setDedupKey(String dedupKey) {
+        this.dedupKey = dedupKey;
     }
 
     public String getId() {
