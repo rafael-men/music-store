@@ -1,6 +1,6 @@
 # Music Store
 
-E-commerce de discos, merchandise e produtos musicais. Aplicação full-stack com frontend em React e backend em microsserviços Spring Boot.
+Projeto E-commerce de discos, merch e produtos musicais. Aplicação full-stack com frontend em React e backend em microsserviços Spring Boot.
 
 ---
 
