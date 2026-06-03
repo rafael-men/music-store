@@ -5,6 +5,7 @@ import com.music.auth_service.dtos.UpdateUserRequest;
 import com.music.auth_service.dtos.UserResponse;
 import com.music.auth_service.exceptions.CpfAlreadyExistsException;
 import com.music.auth_service.exceptions.EmailAlreadyExistsException;
+import com.music.auth_service.exceptions.InvalidCredentialsException;
 import com.music.auth_service.exceptions.UserNotFoundException;
 import com.music.auth_service.models.Address;
 import com.music.auth_service.models.Role;

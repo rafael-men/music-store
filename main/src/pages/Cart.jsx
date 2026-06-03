@@ -7,6 +7,7 @@ import { useCart } from '../contexts/CartContext'
 import { extractErrorMessage } from '../api/client'
 import { calculateShipping, isValidCep, extractShippingError } from '../api/shipping-form'
 import { productsApi } from '../api/products'
+import { ordersApi } from '../api/orders'
 
 const formatBRL = (value) =>
   (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -32,7 +33,7 @@ const LoginRequired = () => (
   </div>
 )
 
-const CartContent = () => {
+const CartContent = ({ userId }) => {
   const { cart, loading, addItem, removeItem, clear } = useCart()
   const [error, setError] = useState('')
   const [updating, setUpdating] = useState(false)
@@ -45,6 +46,7 @@ const CartContent = () => {
   const [freteLoading, setFreteLoading] = useState(false)
   const [freteError, setFreteError] = useState('')
   const [ordered, setOrdered] = useState(false)
+  const [orderInfo, setOrderInfo] = useState(null)
 
   const items = cart?.items || []
   const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
@@ -159,9 +161,37 @@ const CartContent = () => {
   }
 
   const handleFinalize = async () => {
+    setError('')
+    if (!freteCalculado || !freteSelected) {
+      setError('Calcule e escolha uma opção de frete antes de finalizar.')
+      return
+    }
+    if (items.length === 0) {
+      setError('Seu carrinho está vazio.')
+      return
+    }
     setUpdating(true)
     try {
+      const selectedOption = freteOptions.find((o) => o.id === freteSelected)
+      const created = await ordersApi.create({
+        userId,
+        paymentMethod: 'PIX',
+        shippingCost: frete ?? 0,
+        shippingService: selectedOption ? `${selectedOption.company} ${selectedOption.name}` : null,
+        shippingCarrier: selectedOption?.company || null,
+        items: items.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          image: item.image || '/assets/652292.png',
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      })
       await clear()
+      setOrderInfo({
+        id: created?.id || null,
+        total: totalComFrete,
+      })
       setOrdered(true)
     } catch (err) {
       setError(extractErrorMessage(err, 'Falha ao finalizar pedido.'))
@@ -187,7 +217,10 @@ const CartContent = () => {
           </div>
           <h2 className="text-xl font-bold text-white mb-2">Pedido realizado!</h2>
           <p className="text-gray-400 text-sm mb-1">Você pode acompanhar o pedido na sua área de pedidos.</p>
-          <p className="text-green-400 font-bold text-lg mb-6">{formatBRL(totalComFrete)}</p>
+          {orderInfo?.id && (
+            <p className="text-[11px] font-mono text-gray-500 mb-1">#{orderInfo.id}</p>
+          )}
+          <p className="text-green-400 font-bold text-lg mb-6">{formatBRL(orderInfo?.total ?? 0)}</p>
           <p className="text-gray-600 text-xs">
             Status: <span className="text-yellow-500 font-medium">Aguardando pagamento</span>
           </p>
@@ -368,13 +401,15 @@ const CartContent = () => {
                 </div>
               </div>
               <p className="text-[11px] text-gray-500 mb-6 leading-relaxed">
-                Ao finalizar, um QR Code PIX será gerado para pagamento.
+                {freteCalculado
+                  ? 'Ao finalizar, seu pedido é criado e fica aguardando pagamento.'
+                  : 'Calcule o frete e escolha uma opção antes de finalizar.'}
               </p>
 
               <button
                 onClick={handleFinalize}
-                disabled={updating}
-                className="w-full py-3 rounded-xl font-semibold text-sm bg-green-500 text-black hover:bg-green-400 transition-colors duration-200 disabled:opacity-60"
+                disabled={updating || !freteCalculado || !freteSelected}
+                className="w-full py-3 rounded-xl font-semibold text-sm bg-green-500 text-black hover:bg-green-400 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {updating ? 'Processando...' : 'Finalizar com PIX'}
               </button>
@@ -389,7 +424,7 @@ const CartContent = () => {
 const Cart = () => {
   const { isAuthenticated, user } = useAuth()
   return isAuthenticated && user?.id
-    ? <CartContent />
+    ? <CartContent userId={user.id} />
     : <LoginRequired />
 }
 

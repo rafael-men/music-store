@@ -21,6 +21,8 @@ public class Order {
     private String carrier;
     private String trackingUrl;
     private LocalDateTime shippedAt;
+    private double shippingCost;
+    private String shippingService;
 
     public Order() {
         this.createdAt = LocalDateTime.now();
@@ -29,11 +31,18 @@ public class Order {
 
     public Order(String id, String userId, List<OrderItem> items, double total,
                  PaymentMethod paymentMethod) {
+        this(id, userId, items, total, paymentMethod, 0.0, null);
+    }
+
+    public Order(String id, String userId, List<OrderItem> items, double total,
+                 PaymentMethod paymentMethod, double shippingCost, String shippingService) {
         this.id = id;
         this.userId = userId;
         this.items = items;
         this.total = total;
         this.paymentMethod = paymentMethod;
+        this.shippingCost = shippingCost;
+        this.shippingService = shippingService;
         this.status = OrderStatus.PENDING;
         this.createdAt = LocalDateTime.now();
     }
@@ -70,4 +79,10 @@ public class Order {
 
     public LocalDateTime getShippedAt() { return shippedAt; }
     public void setShippedAt(LocalDateTime shippedAt) { this.shippedAt = shippedAt; }
+
+    public double getShippingCost() { return shippingCost; }
+    public void setShippingCost(double shippingCost) { this.shippingCost = shippingCost; }
+
+    public String getShippingService() { return shippingService; }
+    public void setShippingService(String shippingService) { this.shippingService = shippingService; }
 }

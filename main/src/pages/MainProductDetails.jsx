@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Typography } from '@material-tailwind/react'
 import { Truck, ShoppingCart, CreditCard, Heart } from 'lucide-react'
 import StockBadge from '../Components/StockBadge'
@@ -12,7 +12,6 @@ import LoginPromptModal from '../Components/LoginPromptModal'
 import { productsApi } from '../api/products'
 import { useCart } from '../contexts/CartContext'
 import { extractErrorMessage } from '../api/client'
-import { useAuth } from '../contexts/AuthContext'
 import { calculateShipping, isValidCep, extractShippingError } from '../api/shipping-form'
 
 const formatBRL = (value) =>
@@ -20,7 +19,7 @@ const formatBRL = (value) =>
 
 const ProductDetails = () => {
   const { id } = useParams()
-  const { user } = useAuth()
+  const navigate = useNavigate()
   const { addItem } = useCart()
   const [cep, setCep] = useState('')
   const [freteOptions, setFreteOptions] = useState([])
@@ -84,7 +83,20 @@ const ProductDetails = () => {
     })
 
   const handleBuyNow = () =>
-    requireAuth(() => alert(`Você comprou: ${product.title}`), {
+    requireAuth(async () => {
+      try {
+        await addItem({
+          productId: product.id,
+          name: product.title,
+          image: product.imageUrl || '/assets/652292.png',
+          price: product.price,
+          quantity: 1,
+        })
+        navigate('/carrinho')
+      } catch (err) {
+        setError(extractErrorMessage(err, 'Falha ao iniciar a compra.'))
+      }
+    }, {
       title: 'Faça login para comprar',
       message: 'Você precisa estar logado para finalizar a compra.',
     })

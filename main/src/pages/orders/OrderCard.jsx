@@ -83,9 +83,19 @@ const OrderCard = ({ order }) => {
               ))}
             </div>
 
-            <div className="mt-3 pt-3 border-t border-gray-800 flex items-center justify-between">
-              <span className="text-xs text-gray-400">Total</span>
-              <span className="text-sm font-bold text-green-400">{formatBRL(order.total)}</span>
+            <div className="mt-3 pt-3 border-t border-gray-800 space-y-1">
+              {(order.shippingCost ?? 0) > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400">
+                    Frete{order.shippingService ? ` · ${order.shippingService}` : ''}
+                  </span>
+                  <span className="text-xs text-gray-300">{formatBRL(order.shippingCost)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400">Total</span>
+                <span className="text-sm font-bold text-green-400">{formatBRL(order.total)}</span>
+              </div>
             </div>
           </div>
 
@@ -99,32 +109,35 @@ const OrderCard = ({ order }) => {
             </div>
           </div>
 
-          {order.trackingCode && (
-            <div className="bg-cyan-500/5 border border-cyan-500/30 rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Truck size={13} className="text-cyan-400 shrink-0" />
-                <p className="text-[11px] font-semibold text-cyan-300 uppercase tracking-wider">Rastreamento</p>
-              </div>
-              <div className="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 mb-2">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">
-                  Código {order.carrier ? `· ${order.carrier}` : ''}
+          {(order.shippingService || order.carrier || order.trackingCode || (order.shippingCost ?? 0) > 0) && (
+            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Truck size={14} className="text-cyan-400 shrink-0" />
+                <p className="text-sm text-white leading-tight truncate">
+                  {order.shippingService || order.carrier || 'Envio'}
                 </p>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-mono font-semibold text-white truncate">{order.trackingCode}</p>
-                  <CopyButton text={order.trackingCode} label="Copiar" />
-                </div>
               </div>
-              {order.trackingUrl && (
-                <a
-                  href={order.trackingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium text-black bg-white px-4 py-2 rounded-lg no-underline hover:bg-gray-200 transition-colors"
-                >
-                  <Truck size={13} />
-                  Rastrear pedido
-                  <ExternalLink size={11} />
-                </a>
+
+              {order.trackingCode ? (
+                <div className="flex items-center justify-between gap-2 pl-6">
+                  <p className="text-[13px] font-mono text-gray-200 truncate">{order.trackingCode}</p>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <CopyButton text={order.trackingCode} label="Copiar" />
+                    {order.trackingUrl && (
+                      <a
+                        href={order.trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 no-underline"
+                      >
+                        Rastrear
+                        <ExternalLink size={11} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[12px] text-gray-500 pl-6">Código de rastreio ainda não disponível</p>
               )}
             </div>
           )}

@@ -38,8 +38,14 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItem> items = dto.items().stream()
                 .map(i -> new OrderItem(i.productId(), i.name(), i.image(), i.price(), i.quantity()))
                 .toList();
-        double total = items.stream().mapToDouble(i -> i.getPrice() * i.getQuantity()).sum();
-        Order order = new Order(null, dto.userId(), items, total, dto.paymentMethod());
+        double itemsTotal = items.stream().mapToDouble(i -> i.getPrice() * i.getQuantity()).sum();
+        double shipping = Math.max(0.0, dto.shippingCost());
+        double total = itemsTotal + shipping;
+        Order order = new Order(null, dto.userId(), items, total, dto.paymentMethod(),
+                shipping, dto.shippingService());
+        if (dto.shippingCarrier() != null && !dto.shippingCarrier().isBlank()) {
+            order.setCarrier(dto.shippingCarrier());
+        }
         Order saved = orderRepository.save(order);
 
         eventPublisher.publishEvent(new OrderCreatedEvent(
