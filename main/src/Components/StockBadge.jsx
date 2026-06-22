@@ -7,6 +7,14 @@ const StockBadge = ({ stock, showLabel = false }) => {
       </span>
     )
   }
+  if (stock === 1) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full">
+        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+        Último disponível
+      </span>
+    )
+  }
   if (stock <= 3) {
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-full">

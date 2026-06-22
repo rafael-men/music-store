@@ -1,7 +1,11 @@
-x-jwt-env: &jwt-env
+x-internal-env: &internal-env
+  INTERNAL_SECRET: prod-replace-me-with-strong-random-secret-32-chars
+
+x-shared-env: &shared-env
   JWT_SECRET: c2VjdXJlLXNlY3JldC1rZXktZm9yLW11c2ljLW1lcmNoYW5kaXNpbmctYXBwLW11c3QtYmUtYXQtbGVhc3QtMjU2LWJpdHM=
   JWT_ISSUER: music-store
   JWT_AUDIENCE: music-store-api
+  INTERNAL_SECRET: prod-replace-me-with-strong-random-secret-32-chars
 
 services:
   auth-db:
@@ -84,7 +88,7 @@ services:
       context: ./auth-service
     container_name: auth-service
     environment:
-      <<: *jwt-env
+      <<: *shared-env
     depends_on:
       auth-db:
         condition: service_healthy
@@ -105,6 +109,8 @@ services:
     build:
       context: ./product-service
     container_name: product-service
+    environment:
+      <<: *internal-env
     depends_on:
       mongodb:
         condition: service_healthy
@@ -125,6 +131,8 @@ services:
     build:
       context: ./cart-service
     container_name: cart-service
+    environment:
+      <<: *internal-env
     depends_on:
       mongodb:
         condition: service_healthy
@@ -145,6 +153,8 @@ services:
     build:
       context: ./order-service
     container_name: order-service
+    environment:
+      <<: *internal-env
     depends_on:
       mongodb:
         condition: service_healthy
@@ -167,6 +177,8 @@ services:
     build:
       context: ./notification-service
     container_name: notification-service
+    environment:
+      <<: *internal-env
     depends_on:
       mongodb:
         condition: service_healthy
@@ -190,7 +202,7 @@ services:
       context: ./api-gateway
     container_name: api-gateway
     environment:
-      <<: *jwt-env
+      <<: *shared-env
     depends_on:
       eureka-server:
         condition: service_healthy

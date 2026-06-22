@@ -2,6 +2,7 @@ package com.music.product_service.controllers;
 
 import com.music.product_service.dtos.ProductRequestDTO;
 import com.music.product_service.dtos.ProductResponseDTO;
+import com.music.product_service.dtos.StockReservationDTO;
 import com.music.product_service.models.ProductCategory;
 import com.music.product_service.services.ProductService;
 import jakarta.validation.Valid;
@@ -41,11 +42,13 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<List<ProductResponseDTO>> findAll(
+            @RequestHeader(value = "X-User-Role", required = false) String role,
             @RequestParam(required = false) ProductCategory category,
             @RequestParam(required = false) String search) {
-        if (category != null) return ResponseEntity.ok(productService.findByCategory(category));
-        if (search != null) return ResponseEntity.ok(productService.search(search));
-        return ResponseEntity.ok(productService.findAll());
+        boolean includeOutOfStock = "ADMIN".equalsIgnoreCase(role);
+        if (category != null) return ResponseEntity.ok(productService.findByCategory(category, includeOutOfStock));
+        if (search != null) return ResponseEntity.ok(productService.search(search, includeOutOfStock));
+        return ResponseEntity.ok(productService.findAll(includeOutOfStock));
     }
 
     @PutMapping("/{id}")
@@ -65,5 +68,15 @@ public class ProductController {
         productService.delete(id);
         audit.info("action=DELETE_PRODUCT userId={} productId={}", userId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/reserve")
+    public ResponseEntity<ProductResponseDTO> reserveStock(
+            @PathVariable String id,
+            @RequestBody @Valid StockReservationDTO dto) {
+        ProductResponseDTO updated = productService.reserveStock(id, dto.quantity());
+        audit.info("action=RESERVE_STOCK productId={} quantity={} remaining={}",
+                id, dto.quantity(), updated.stockQuantity());
+        return ResponseEntity.ok(updated);
     }
 }

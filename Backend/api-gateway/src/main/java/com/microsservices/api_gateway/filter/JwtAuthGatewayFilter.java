@@ -13,19 +13,22 @@ import org.springframework.web.servlet.function.ServerResponse;
 
 import javax.crypto.SecretKey;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Component
 public class JwtAuthGatewayFilter {
 
-    private static final List<String> PUBLIC_PATHS = List.of(
-            "/users/register",
-            "/users/login",
-            "/swagger-ui",
-            "/v3/api-docs"
+    private static final List<Pattern> PUBLIC_PATHS = List.of(
+            Pattern.compile("^/users/register$"),
+            Pattern.compile("^/users/login$"),
+            Pattern.compile("^/swagger-ui(/.*)?$"),
+            Pattern.compile("^/swagger-ui\\.html$"),
+            Pattern.compile("^/v3/api-docs(/.*)?$")
     );
 
-    private static final List<String> PUBLIC_GET_PATHS = List.of(
-            "/products"
+    private static final List<Pattern> PUBLIC_GET_PATHS = List.of(
+            Pattern.compile("^/products$"),
+            Pattern.compile("^/products/[^/]+$")
     );
 
     @Value("${jwt.secret}")
@@ -42,6 +45,12 @@ public class JwtAuthGatewayFilter {
 
     public HandlerFilterFunction<ServerResponse, ServerResponse> filter() {
         return (request, next) -> {
+            // CORS preflight: deixa o handler de CORS responder. Sem isso, o navegador bloqueia
+            // todas as requisições POST/PUT/DELETE/PATCH que exigem Authorization.
+            if ("OPTIONS".equalsIgnoreCase(request.method().name())) {
+                return next.handle(request);
+            }
+
             if (isPublicRoute(request)) {
                 ServerRequest mutated = ServerRequest.from(request)
                         .header("X-Internal-Secret", internalSecret)
@@ -62,6 +71,13 @@ public class JwtAuthGatewayFilter {
                 String email = claims.get("email", String.class);
                 String role = claims.get("role", String.class);
 
+                String method = request.method().name();
+                boolean isMutation = !"GET".equalsIgnoreCase(method) && !"OPTIONS".equalsIgnoreCase(method);
+                if (isMutation && (userId == null || userId.isBlank())) {
+                    return ServerResponse.status(HttpStatus.UNAUTHORIZED)
+                            .body("{\"error\":\"Token sem identificação de usuário\"}");
+                }
+
                 ServerRequest mutatedRequest = ServerRequest.from(request)
                         .header("X-User-Id", userId != null ? userId : "")
                         .header("X-User-Email", email != null ? email : "")
@@ -81,13 +97,13 @@ public class JwtAuthGatewayFilter {
         String path = request.uri().getPath();
         String method = request.method().name();
 
-        for (String publicPath : PUBLIC_PATHS) {
-            if (path.startsWith(publicPath)) return true;
+        for (Pattern p : PUBLIC_PATHS) {
+            if (p.matcher(path).matches()) return true;
         }
 
         if ("GET".equalsIgnoreCase(method)) {
-            for (String publicGetPath : PUBLIC_GET_PATHS) {
-                if (path.startsWith(publicGetPath)) return true;
+            for (Pattern p : PUBLIC_GET_PATHS) {
+                if (p.matcher(path).matches()) return true;
             }
         }
 

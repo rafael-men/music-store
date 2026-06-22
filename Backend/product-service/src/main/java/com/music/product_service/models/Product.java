@@ -1,6 +1,7 @@
 package com.music.product_service.models;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -18,6 +19,9 @@ public class Product {
     private int maxInstallments;
     private int stockQuantity;
     private boolean available;
+
+    @Version
+    private Long version;
 
     public Product() {}
 
@@ -60,4 +64,7 @@ public class Product {
 
     public boolean isAvailable() { return available; }
     public void setAvailable(boolean available) { this.available = available; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 }

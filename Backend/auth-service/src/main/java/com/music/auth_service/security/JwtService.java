@@ -50,9 +50,15 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
+        if (userDetails == null) return false;
         final Claims claims = extractAllClaims(token);
         if (claims.getExpiration().before(new Date())) return false;
-        return userDetails != null;
+        String subject = claims.getSubject();
+        if (subject == null || subject.isBlank()) return false;
+        if (userDetails instanceof CustomUserDetails cud) {
+            return subject.equals(cud.getId().toString());
+        }
+        return subject.equals(userDetails.getUsername());
     }
 
     private Claims extractAllClaims(String token) {

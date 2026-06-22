@@ -1,5 +1,6 @@
 package com.music.order_service.services.impl;
 
+import com.music.order_service.clients.ProductClient;
 import com.music.order_service.dtos.OrderRequestDTO;
 import com.music.order_service.dtos.OrderResponseDTO;
 import com.music.order_service.dtos.TrackingUpdateDTO;
@@ -23,10 +24,14 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ProductClient productClient;
 
-    public OrderServiceImpl(OrderRepository orderRepository, ApplicationEventPublisher eventPublisher) {
+    public OrderServiceImpl(OrderRepository orderRepository,
+                            ApplicationEventPublisher eventPublisher,
+                            ProductClient productClient) {
         this.orderRepository = orderRepository;
         this.eventPublisher = eventPublisher;
+        this.productClient = productClient;
     }
 
     @Override
@@ -38,6 +43,14 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItem> items = dto.items().stream()
                 .map(i -> new OrderItem(i.productId(), i.name(), i.image(), i.price(), i.quantity()))
                 .toList();
+
+        // Reserva estoque ANTES de salvar o pedido. Se falhar, transação é abortada
+        // (RuntimeException -> rollback). Item já reservado fica como "perdido" caso outro
+        // item falhe depois — aceitável para escopo dev; em prod, compensar via saga/outbox.
+        for (OrderItem item : items) {
+            productClient.reserveStock(item.getProductId(), item.getQuantity());
+        }
+
         double itemsTotal = items.stream().mapToDouble(i -> i.getPrice() * i.getQuantity()).sum();
         double shipping = Math.max(0.0, dto.shippingCost());
         double total = itemsTotal + shipping;
@@ -97,16 +110,22 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponseDTO updateTracking(String id, TrackingUpdateDTO dto) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Não é possível adicionar rastreio a um pedido cancelado.");
+        }
         OrderStatus oldStatus = order.getStatus();
         order.setTrackingCode(dto.trackingCode());
         order.setCarrier(dto.carrier());
         order.setTrackingUrl(dto.trackingUrl());
-        if (order.getShippedAt() == null) {
-            order.setShippedAt(LocalDateTime.now());
-        }
-        if (order.getStatus() == OrderStatus.PENDING || order.getStatus() == OrderStatus.CONFIRMED) {
+
+
+        if (oldStatus == OrderStatus.PENDING || oldStatus == OrderStatus.CONFIRMED) {
             order.setStatus(OrderStatus.SHIPPED);
+            if (order.getShippedAt() == null) {
+                order.setShippedAt(LocalDateTime.now());
+            }
         }
+
         Order saved = orderRepository.save(order);
         if (oldStatus != saved.getStatus()) {
             publishStatusChanged(saved, oldStatus);

@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 
 @Component
@@ -18,7 +20,8 @@ import java.util.List;
 public class InternalSecretFilter extends OncePerRequestFilter {
 
     private static final List<String> WHITELIST = List.of(
-            "/actuator",
+            "/actuator/health",
+            "/actuator/info",
             "/swagger-ui",
             "/v3/api-docs"
     );
@@ -40,7 +43,7 @@ public class InternalSecretFilter extends OncePerRequestFilter {
         }
 
         String received = request.getHeader("X-Internal-Secret");
-        if (received == null || !received.equals(expectedSecret)) {
+        if (!secretMatches(received)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
             response.getWriter().write("{\"error\":\"Acesso direto não permitido. Use o gateway.\"}");
@@ -48,5 +51,13 @@ public class InternalSecretFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    private boolean secretMatches(String received) {
+        if (received == null || expectedSecret == null) return false;
+        return MessageDigest.isEqual(
+                received.getBytes(StandardCharsets.UTF_8),
+                expectedSecret.getBytes(StandardCharsets.UTF_8)
+        );
     }
 }

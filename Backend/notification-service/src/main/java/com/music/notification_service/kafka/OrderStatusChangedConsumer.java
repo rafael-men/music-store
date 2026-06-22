@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,15 +20,16 @@ public class OrderStatusChangedConsumer {
         this.notificationRepository = notificationRepository;
     }
 
-    @KafkaListener(topics = "order.status-changed", groupId = "notification-service-group",
+    @KafkaListener(topics = "order.status-changed", groupId = "notification-service-status",
             containerFactory = "statusChangedListenerContainerFactory")
-    public void consume(OrderStatusChangedEvent event) {
+    public void consume(OrderStatusChangedEvent event, Acknowledgment ack) {
         if (event == null || event.orderId() == null || event.newStatus() == null) {
             throw new IllegalArgumentException("Evento OrderStatusChanged inválido");
         }
         String dedupKey = "order-status:" + event.orderId() + ":" + event.newStatus();
         if (notificationRepository.existsByDedupKey(dedupKey)) {
             log.debug("Status {} do pedido {} já notificado, ignorando", event.newStatus(), event.orderId());
+            ack.acknowledge();
             return;
         }
 
@@ -40,6 +42,7 @@ public class OrderStatusChangedConsumer {
         } catch (DuplicateKeyException e) {
             log.debug("Notificação duplicada para {} (race), ignorando", dedupKey);
         }
+        ack.acknowledge();
     }
 
     private NotificationType resolveType(String newStatus) {

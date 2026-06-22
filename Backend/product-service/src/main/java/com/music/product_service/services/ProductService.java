@@ -10,9 +10,10 @@ public interface ProductService {
 
     ProductResponseDTO create(ProductRequestDTO dto);
     ProductResponseDTO findById(String id);
-    List<ProductResponseDTO> findAll();
-    List<ProductResponseDTO> findByCategory(ProductCategory category);
-    List<ProductResponseDTO> search(String title);
+    List<ProductResponseDTO> findAll(boolean includeOutOfStock);
+    List<ProductResponseDTO> findByCategory(ProductCategory category, boolean includeOutOfStock);
+    List<ProductResponseDTO> search(String title, boolean includeOutOfStock);
     ProductResponseDTO update(String id, ProductRequestDTO dto);
     void delete(String id);
+    ProductResponseDTO reserveStock(String id, int quantity);
 }

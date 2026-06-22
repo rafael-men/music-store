@@ -16,6 +16,11 @@ public class AdminInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        String uri = request.getRequestURI();
+        if ("POST".equalsIgnoreCase(method) && uri != null && uri.matches("^/products/[^/]+/reserve$")) {
+            return true;
+        }
+
         String userId = request.getHeader("X-User-Id");
         if (userId == null || userId.isBlank()) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

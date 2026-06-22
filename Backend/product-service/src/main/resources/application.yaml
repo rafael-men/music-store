@@ -12,12 +12,21 @@ mongock:
     database-name: product_db
 
 internal:
-  secret: dev-internal-secret-change-me
+  secret: ${INTERNAL_SECRET:dev-internal-secret-change-me}
 
 server:
   port: 8083
   tomcat:
     max-http-header-size: 1048576
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
 
 eureka:
   client:

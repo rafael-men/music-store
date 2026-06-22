@@ -2,17 +2,21 @@ package com.music.product_service.services.impl;
 
 import com.music.product_service.dtos.ProductRequestDTO;
 import com.music.product_service.dtos.ProductResponseDTO;
+import com.music.product_service.exceptions.OutOfStockException;
 import com.music.product_service.exceptions.ProductNotFoundException;
 import com.music.product_service.models.Product;
 import com.music.product_service.models.ProductCategory;
 import com.music.product_service.repositories.ProductRepository;
 import com.music.product_service.services.ProductService;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+
+    private static final int RESERVE_MAX_RETRIES = 5;
 
     private final ProductRepository productRepository;
 
@@ -34,18 +38,27 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductResponseDTO> findAll() {
-        return productRepository.findAll().stream().map(ProductResponseDTO::from).toList();
+    public List<ProductResponseDTO> findAll(boolean includeOutOfStock) {
+        return productRepository.findAll().stream()
+                .filter(p -> includeOutOfStock || p.getStockQuantity() > 0)
+                .map(ProductResponseDTO::from)
+                .toList();
     }
 
     @Override
-    public List<ProductResponseDTO> findByCategory(ProductCategory category) {
-        return productRepository.findByCategoriesContaining(category).stream().map(ProductResponseDTO::from).toList();
+    public List<ProductResponseDTO> findByCategory(ProductCategory category, boolean includeOutOfStock) {
+        return productRepository.findByCategoriesContaining(category).stream()
+                .filter(p -> includeOutOfStock || p.getStockQuantity() > 0)
+                .map(ProductResponseDTO::from)
+                .toList();
     }
 
     @Override
-    public List<ProductResponseDTO> search(String title) {
-        return productRepository.findByTitleContainingIgnoreCase(title).stream().map(ProductResponseDTO::from).toList();
+    public List<ProductResponseDTO> search(String title, boolean includeOutOfStock) {
+        return productRepository.findByTitleContainingIgnoreCase(title).stream()
+                .filter(p -> includeOutOfStock || p.getStockQuantity() > 0)
+                .map(ProductResponseDTO::from)
+                .toList();
     }
 
     @Override
@@ -67,5 +80,32 @@ public class ProductServiceImpl implements ProductService {
     public void delete(String id) {
         if (!productRepository.existsById(id)) throw new ProductNotFoundException(id);
         productRepository.deleteById(id);
+    }
+
+    @Override
+    public ProductResponseDTO reserveStock(String id, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantidade a reservar deve ser positiva");
+        }
+        OptimisticLockingFailureException lastEx = null;
+        for (int attempt = 0; attempt < RESERVE_MAX_RETRIES; attempt++) {
+            Product product = productRepository.findById(id)
+                    .orElseThrow(() -> new ProductNotFoundException(id));
+            int current = product.getStockQuantity();
+            if (current < quantity) {
+                throw new OutOfStockException(id, quantity, current);
+            }
+            product.setStockQuantity(current - quantity);
+            try {
+                Product saved = productRepository.save(product);
+                return ProductResponseDTO.from(saved);
+            } catch (OptimisticLockingFailureException ex) {
+                lastEx = ex;
+                // Outra requisição alterou o produto entre nossa leitura e gravação — recarrega e tenta de novo.
+            }
+        }
+        throw lastEx != null
+                ? lastEx
+                : new IllegalStateException("Falha ao reservar estoque após múltiplas tentativas");
     }
 }

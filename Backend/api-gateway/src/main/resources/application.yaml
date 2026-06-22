@@ -7,7 +7,7 @@ jwt:
   audience: ${JWT_AUDIENCE:music-store-api}
 
 internal:
-  secret: dev-internal-secret-change-me
+  secret: ${INTERNAL_SECRET:dev-internal-secret-change-me}
 
 server:
   port: 8080
@@ -21,4 +21,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, gateway
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
