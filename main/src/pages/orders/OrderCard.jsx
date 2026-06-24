@@ -18,7 +18,7 @@ const OrderCard = ({ order }) => {
   const itemsCount = items.reduce((sum, item) => sum + (item.quantity || 0), 0)
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+    <div className="glass-card rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}

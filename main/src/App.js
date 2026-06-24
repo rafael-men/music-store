@@ -41,7 +41,7 @@ function App() {
       <FavoritesProvider>
         <CartProvider>
           <ThemeProvider>
-            <div className="bg-gray-950 min-h-screen">
+            <div className="app-bg min-h-screen text-white">
               <Routes>
                 <Route element={<PublicLayout />}>
                   <Route path="/" element={<MainPage />} />

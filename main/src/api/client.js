@@ -50,4 +50,20 @@ export const extractErrorMessage = (error, fallback = 'Erro inesperado.') => {
   return error?.message || fallback
 }
 
+
+export const extractOrderErrorMessage = (error, fallback = 'Falha ao processar pedido.') => {
+  const status = error?.response?.status
+  const raw = error?.response?.data?.message || ''
+  if (status === 409 && /estoque|out.?of.?stock/i.test(raw)) {
+    return 'Produto sem estoque suficiente. Atualize seu carrinho e tente novamente.'
+  }
+  if (status === 502) {
+    return 'Não foi possível confirmar o estoque agora. Tente novamente em instantes.'
+  }
+  if (status === 409) {
+    return raw || 'Operação em conflito com o estado atual do pedido.'
+  }
+  return extractErrorMessage(error, fallback)
+}
+
 export default api

@@ -31,8 +31,8 @@ const AdminSidebar = ({ open, onClose }) => {
 
       <aside
         className={`
-          fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-gray-900 border-r border-gray-800
-          flex flex-col transition-transform duration-200
+          fixed lg:sticky top-0 left-0 z-40 h-screen w-64 glass-card border-r border-white/[0.08]
+          flex flex-col transition-transform duration-200 rounded-none
           ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
         `}
       >

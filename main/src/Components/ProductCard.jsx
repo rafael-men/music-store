@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card } from 'primereact/card'
+import { Toast } from 'primereact/toast'
 import { Heart, ShoppingCart, Check } from 'lucide-react'
 import ProductImage from './ProductImage'
 import { formatCategory } from '../utils/categories'
 import { useFavorites } from '../contexts/FavoritesContext'
 import { useCart } from '../contexts/CartContext'
 import { useLoginPrompt } from '../hooks/useLoginPrompt'
-import { extractErrorMessage } from '../api/client'
+import { extractOrderErrorMessage } from '../api/client'
 import LoginPromptModal from './LoginPromptModal'
 
 const formatPrice = (value) => {
@@ -24,6 +25,7 @@ const ProductCard = ({ product }) => {
   const { requireAuth, open, close, config } = useLoginPrompt()
   const [added, setAdded] = useState(false)
   const [adding, setAdding] = useState(false)
+  const toastRef = useRef(null)
   const stock = product.stockQuantity ?? product.stock ?? 0
   const outOfStock = stock === 0
 
@@ -52,7 +54,12 @@ const ProductCard = ({ product }) => {
         setAdded(true)
         setTimeout(() => setAdded(false), 2000)
       } catch (err) {
-        alert(extractErrorMessage(err, 'Falha ao adicionar ao carrinho.'))
+        toastRef.current?.show({
+          severity: 'error',
+          summary: 'Não foi possível adicionar',
+          detail: extractOrderErrorMessage(err, 'Falha ao adicionar ao carrinho.'),
+          life: 4000,
+        })
       } finally {
         setAdding(false)
       }
@@ -64,6 +71,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <>
+      <Toast ref={toastRef} position="bottom-right" />
       <Card
         unstyled
         header={
@@ -111,14 +119,14 @@ const ProductCard = ({ product }) => {
           </div>
         }
         pt={{
-          root:    { className: 'group h-full flex flex-col rounded-xl border border-gray-800 bg-gray-900 overflow-hidden hover:border-gray-600 hover:shadow-lg hover:shadow-black/50 hover:-translate-y-0.5 transition-all duration-300 cursor-default' },
+          root:    { className: 'group h-full flex flex-col rounded-xl glass-card overflow-hidden hover:border-white/20 hover:shadow-lg hover:shadow-black/50 hover:-translate-y-0.5 transition-all duration-300 cursor-default' },
           body:    { className: 'flex flex-col flex-1 p-2.5 sm:p-3' },
           content: { className: 'flex flex-col flex-1 p-0' },
           footer:  { className: 'pt-2.5 mt-auto' },
         }}
       >
         <div className="flex flex-wrap gap-1 mb-1.5">
-          {product.categories.slice(0, 3).map((cat) => (
+          {(product.categories || []).slice(0, 3).map((cat) => (
             <span key={cat} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700 transition-colors duration-150">
               {formatCategory(cat)}
             </span>

@@ -32,8 +32,8 @@ const Favorites = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md text-center bg-gray-900 border border-gray-800 rounded-2xl p-8">
+      <div className="min-h-screen bg-transparent text-white flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md text-center glass-card rounded-2xl p-8">
           <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
             <Heart size={22} className="text-white" />
           </div>
@@ -57,7 +57,7 @@ const Favorites = () => {
   const isLoading = loading || favoritesLoading
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-transparent text-white">
       <div className="container mx-auto px-4 pt-8 pb-16">
 
         <div className="border-l-4 border-l-red-500 pl-4 mb-8">

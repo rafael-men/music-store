@@ -19,7 +19,7 @@ const Categories = () => {
   ];
 
   return (
-    <div className="bg-gray-900 border-b border-gray-800">
+    <div className="glass-bar">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between lg:justify-start lg:gap-2">
           <span className="text-gray-400 text-xs font-semibold uppercase tracking-widest hidden lg:block mr-2 shrink-0">

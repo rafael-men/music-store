@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Typography } from '@material-tailwind/react'
 import { Truck, ShoppingCart, CreditCard, Heart } from 'lucide-react'
@@ -11,8 +11,9 @@ import { useLoginPrompt } from '../hooks/useLoginPrompt'
 import LoginPromptModal from '../Components/LoginPromptModal'
 import { productsApi } from '../api/products'
 import { useCart } from '../contexts/CartContext'
-import { extractErrorMessage } from '../api/client'
+import { extractErrorMessage, extractOrderErrorMessage } from '../api/client'
 import { calculateShipping, isValidCep, extractShippingError } from '../api/shipping-form'
+import { readJSON, writeJSON } from '../utils/storage'
 
 const formatBRL = (value) =>
   (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -30,6 +31,9 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [addedToCart, setAddedToCart] = useState(false)
+  const freteAbortRef = useRef(null)
+
+  useEffect(() => () => freteAbortRef.current?.abort(), [])
 
   const { toggle, isFavorite } = useFavorites()
   const favorited = isFavorite(product?.id)
@@ -48,9 +52,10 @@ const ProductDetails = () => {
         if (cancelled) return
         setProduct(data)
 
-        const prev = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
+        const prevRaw = readJSON(localStorage, 'recentlyViewed', [])
+        const prev = Array.isArray(prevRaw) ? prevRaw : []
         const updated = [data.id, ...prev.filter((i) => i !== data.id)].slice(0, 20)
-        localStorage.setItem('recentlyViewed', JSON.stringify(updated))
+        writeJSON(localStorage, 'recentlyViewed', updated)
 
         const firstCategory = (data.categories || [])[0]
         if (firstCategory) {
@@ -94,7 +99,7 @@ const ProductDetails = () => {
         })
         navigate('/carrinho')
       } catch (err) {
-        setError(extractErrorMessage(err, 'Falha ao iniciar a compra.'))
+        setError(extractOrderErrorMessage(err, 'Falha ao iniciar a compra.'))
       }
     }, {
       title: 'Faça login para comprar',
@@ -114,7 +119,7 @@ const ProductDetails = () => {
         setAddedToCart(true)
         setTimeout(() => setAddedToCart(false), 2500)
       } catch (err) {
-        alert(extractErrorMessage(err, 'Falha ao adicionar ao carrinho.'))
+        setError(extractOrderErrorMessage(err, 'Falha ao adicionar ao carrinho.'))
       }
     }, {
       title: 'Faça login para adicionar ao carrinho',
@@ -134,10 +139,16 @@ const ProductDetails = () => {
       return
     }
     if (!product) return
+
+    freteAbortRef.current?.abort()
+    const controller = new AbortController()
+    freteAbortRef.current = controller
+
     setFreteLoading(true)
     try {
       const results = await calculateShipping({
         toCep: cep,
+        signal: controller.signal,
         items: [{
           productId: product.id,
           name: product.title,
@@ -146,19 +157,21 @@ const ProductDetails = () => {
           categories: product.categories || [],
         }],
       })
+      if (controller.signal.aborted) return
       setFreteOptions(results)
       if (results.length === 0) setFreteError('Nenhum serviço de entrega disponível para este CEP.')
     } catch (err) {
+      if (controller.signal.aborted || err?.name === 'CanceledError') return
       setFreteError(extractShippingError(err))
       setFreteOptions([])
     } finally {
-      setFreteLoading(false)
+      if (!controller.signal.aborted) setFreteLoading(false)
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <p className="text-gray-500 text-sm">Carregando produto...</p>
       </div>
     )
@@ -166,7 +179,7 @@ const ProductDetails = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
         <p className="text-gray-400 text-lg text-center">{error || 'Produto não catalogado.'}</p>
       </div>
     )
@@ -175,9 +188,9 @@ const ProductDetails = () => {
   const stock = product.stockQuantity ?? product.stock ?? 0
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-transparent text-white">
       <div className="container mx-auto max-w-6xl px-4 py-8 md:py-12">
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <div className="glass-card rounded-2xl overflow-hidden">
           <div className="flex flex-col lg:flex-row">
             <div className="lg:order-1 lg:w-2/5 bg-black flex items-center justify-center shrink-0" style={{ minHeight: '400px' }}>
               <ProductImage

@@ -38,7 +38,7 @@ const SERVICE_LABELS = {
   4: 'eSedex',
 }
 
-export const calculateShipping = async ({ toCep, items }) => {
+export const calculateShipping = async ({ toCep, items, signal } = {}) => {
   if (!FROM_CEP) {
     throw new Error('CEP de origem não configurado.')
   }
@@ -55,12 +55,12 @@ export const calculateShipping = async ({ toCep, items }) => {
     products: items.map(toMelhorEnvioProduct),
   }
 
-  const { data } = await melhorEnvio.post('/shipment/calculate', payload)
+  const { data } = await melhorEnvio.post('/shipment/calculate', payload, { signal })
 
   return (Array.isArray(data) ? data : [])
     .filter((option) => !option.error && option.price)
     .map((option) => ({
-      id: option.id,
+      id: String(option.id),
       name: option.name || SERVICE_LABELS[option.id] || `Serviço ${option.id}`,
       company: option.company?.name || 'Correios',
       price: Number(option.price),

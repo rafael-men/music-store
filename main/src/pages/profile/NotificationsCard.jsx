@@ -46,7 +46,7 @@ const NotificationsCard = ({ userId }) => {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-4">
+    <div className="glass-card rounded-2xl overflow-hidden mb-4">
       <button
         type="button"
         onClick={handleToggle}

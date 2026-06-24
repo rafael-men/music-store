@@ -99,7 +99,7 @@ const AdminHome = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {stats.map(({ label, value, Icon, accent }) => (
-          <div key={label} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div key={label} className="glass-card rounded-xl p-4">
             <div className="flex items-start justify-between mb-3">
               <span className="text-xs text-gray-500">{label}</span>
               <Icon size={16} className={accent} />
@@ -114,7 +114,7 @@ const AdminHome = () => {
           <Link
             key={to}
             to={to}
-            className="bg-gray-900 border border-gray-800 rounded-xl p-4 no-underline hover:border-gray-600 transition-colors group"
+            className="glass-card rounded-xl p-4 no-underline hover:border-gray-600 transition-colors group"
           >
             <Icon size={20} className="text-gray-400 group-hover:text-white transition-colors mb-3" />
             <p className="text-sm font-semibold text-white mb-1">{label}</p>
@@ -123,7 +123,7 @@ const AdminHome = () => {
         ))}
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
           <h2 className="text-sm font-semibold text-white">Pedidos recentes</h2>
           <Link to="/admin/pedidos" className="text-xs text-gray-400 no-underline hover:text-white transition-colors">

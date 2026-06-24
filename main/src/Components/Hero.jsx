@@ -55,7 +55,7 @@ const Hero = () => {
 
   if (loading && slides.length === 0) {
     return (
-      <section className="w-full bg-gray-900 border-b border-gray-800" style={{ height: 'clamp(320px, 55vh, 600px)' }}>
+      <section className="w-full glass-card rounded-none border-x-0 border-t-0" style={{ height: 'clamp(320px, 55vh, 600px)' }}>
         <div className="w-full h-full flex items-center justify-center">
           <p className="text-gray-500 text-sm">Carregando destaques...</p>
         </div>

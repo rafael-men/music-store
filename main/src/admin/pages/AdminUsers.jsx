@@ -153,7 +153,7 @@ const AdminUsers = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nome, e-mail ou CPF"
-          className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600"
+          className="w-full glass-card rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600"
         />
       </div>
 
@@ -189,7 +189,7 @@ const AdminUsers = () => {
         pt={{
           mask: { className: 'bg-black/70 backdrop-blur-sm' },
           root: { className: 'w-full max-w-sm mx-4' },
-          content: { className: 'bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden p-0' },
+          content: { className: 'glass-card rounded-2xl overflow-hidden p-0' },
         }}
       >
         {deleting && (

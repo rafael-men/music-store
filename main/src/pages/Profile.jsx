@@ -8,8 +8,8 @@ import NotificationsCard from './profile/NotificationsCard'
 const DEFAULT_PHOTO = 'https://i.pinimg.com/736x/c0/74/9b/c0749b7cc401421662ae901ec8f9f660.jpg'
 
 const ProfileLoginRequired = () => (
-  <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
-    <div className="w-full max-w-md text-center bg-gray-900 border border-gray-800 rounded-2xl p-8">
+  <div className="min-h-screen bg-transparent text-white flex items-center justify-center px-4 py-12">
+    <div className="w-full max-w-md text-center glass-card rounded-2xl p-8">
       <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
         <UserIcon size={22} className="text-white" />
       </div>
@@ -42,11 +42,12 @@ const ProfileContent = ({ authUser, onLogout }) => {
       .getById(authUser.id)
       .then((data) => {
         if (cancelled) return
-        setUser({
-          name: data.name || authUser.email?.split('@')[0] || 'Usuário',
-          email: data.email || authUser.email || '',
-          profileImage: data.profilePhotoUrl || DEFAULT_PHOTO,
-        })
+        setUser((prev) => ({
+          ...prev,
+          name: data.name || prev.name,
+          email: data.email || prev.email,
+          profileImage: data.profilePhotoUrl || prev.profileImage,
+        }))
       })
       .catch(() => {})
     return () => { cancelled = true }
@@ -57,11 +58,11 @@ const ProfileContent = ({ authUser, onLogout }) => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-transparent">
       <div className="container mx-auto px-4 py-10 max-w-xl">
         <h2 className="text-2xl font-bold text-white mb-8">Meu Perfil</h2>
 
-        <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4 flex items-center gap-5">
+        <div className="relative glass-card rounded-2xl p-6 mb-4 flex items-center gap-5">
           <img
             src={user.profileImage}
             alt="Profile"
@@ -81,7 +82,7 @@ const ProfileContent = ({ authUser, onLogout }) => {
           </Link>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-4">
+        <div className="glass-card rounded-2xl overflow-hidden mb-4">
           {menuItems.map(({ label, Icon, to }, index) => {
             const className = `w-full flex items-center gap-4 px-6 py-4 text-left text-sm text-gray-300 no-underline hover:bg-gray-800 hover:text-white transition-colors duration-150 ${index < menuItems.length - 1 ? 'border-b border-gray-800' : ''}`
             const content = (

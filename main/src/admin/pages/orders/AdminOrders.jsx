@@ -155,7 +155,7 @@ const AdminOrders = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por pedido, cliente ou e-mail"
-            className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600"
+            className="w-full glass-card rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600"
           />
         </div>
         <Dropdown
@@ -166,7 +166,7 @@ const AdminOrders = () => {
           showClear
           pt={{
             ...dropdownPt,
-            root: { className: 'w-full sm:w-56 h-[38px] bg-gray-900 border border-gray-800 rounded-lg flex items-center hover:border-gray-600 focus-within:border-gray-500 transition-colors' },
+            root: { className: 'w-full sm:w-56 h-[38px] glass-card rounded-lg flex items-center hover:border-gray-600 focus-within:border-gray-500 transition-colors' },
           }}
         />
       </div>

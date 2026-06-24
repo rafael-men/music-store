@@ -59,7 +59,7 @@ const Login = () => {
   const inputErr = 'w-full bg-gray-800 border border-red-600 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition-colors'
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-transparent text-white flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 mb-4">
@@ -70,7 +70,7 @@ const Login = () => {
           <p className="text-sm text-gray-400 mt-1">Entre para acessar sua conta</p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8">
+        <div className="glass-card rounded-2xl p-6 sm:p-8">
           {error && (
             <div className="mb-4">
               <Message severity="error" text={error} className="w-full" />

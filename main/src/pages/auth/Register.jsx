@@ -174,7 +174,7 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-transparent text-white flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-2xl">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 mb-4">
@@ -185,7 +185,7 @@ const Register = () => {
           <p className="text-sm text-gray-400 mt-1">Preencha os dados para começar</p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8">
+        <div className="glass-card rounded-2xl p-6 sm:p-8">
           {error && (
             <div className="mb-4">
               <Message severity="error" text={error} className="w-full" />

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Clock, ArrowLeft } from 'lucide-react'
 import ProductCard from '../Components/ProductCard'
 import { productsApi } from '../api/products'
+import { readJSON, writeJSON } from '../utils/storage'
 
 const RecentlyViewed = () => {
   const [products, setProducts] = useState([])
@@ -10,7 +11,8 @@ const RecentlyViewed = () => {
 
   useEffect(() => {
     let cancelled = false
-    const viewedIds = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
+    const stored = readJSON(localStorage, 'recentlyViewed', [])
+    const viewedIds = Array.isArray(stored) ? stored : []
 
     if (viewedIds.length === 0) {
       setLoading(false)
@@ -25,7 +27,7 @@ const RecentlyViewed = () => {
         const valid = items.filter(Boolean)
         setProducts(valid)
         if (valid.length !== viewedIds.length) {
-          localStorage.setItem('recentlyViewed', JSON.stringify(valid.map((p) => p.id)))
+          writeJSON(localStorage, 'recentlyViewed', valid.map((p) => p.id))
         }
       })
       .finally(() => { if (!cancelled) setLoading(false) })
@@ -34,7 +36,7 @@ const RecentlyViewed = () => {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-transparent text-white">
       <div className="container mx-auto px-4 pt-8 pb-16">
         <div className="border-l-4 border-l-gray-400 pl-4 mb-8">
           <div className="flex items-center gap-2 mb-1">

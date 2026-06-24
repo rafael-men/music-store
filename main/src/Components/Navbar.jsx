@@ -34,7 +34,7 @@ const Navbar = () => {
   }
 
   return (
-    <nav className='text-white bg-black border-b border-gray-800 sticky top-0 z-50'>
+    <nav className='text-white glass-bar sticky top-0 z-50'>
       <div className='container mx-auto px-4 py-3 flex justify-between items-center gap-4'>
         <Link to='/' className='flex items-center gap-2 no-underline text-white group shrink-0'>
           <Music2 size={22} className='text-white' />

@@ -49,14 +49,14 @@ const CategoryPage = () => {
 
   if (!meta) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <p className="text-gray-400">Categoria não encontrada.</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-transparent text-white">
       <div className="container mx-auto px-4 pt-8 pb-16">
         <div className={`border-l-4 ${meta.border.replace('border-', 'border-l-').replace('/20', '')} pl-4 mb-8`}>
           <div className="flex items-center gap-2 mb-1">

@@ -8,8 +8,8 @@ import { ordersApi } from '../../api/orders'
 import { extractErrorMessage } from '../../api/client'
 
 const LoginRequired = () => (
-  <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
-    <div className="w-full max-w-md text-center bg-gray-900 border border-gray-800 rounded-2xl p-8">
+  <div className="min-h-screen bg-transparent text-white flex items-center justify-center px-4 py-12">
+    <div className="w-full max-w-md text-center glass-card rounded-2xl p-8">
       <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
         <Package size={22} className="text-white" />
       </div>
@@ -53,7 +53,7 @@ const MyOrdersContent = ({ userId }) => {
   }, [filter, orders])
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-transparent text-white">
       <div className="container mx-auto px-4 py-6 sm:py-10 max-w-3xl">
         <Link
           to="/perfil"
@@ -95,7 +95,7 @@ const MyOrdersContent = ({ userId }) => {
         {loading ? (
           <div className="text-center py-20 text-gray-500 text-sm">Carregando pedidos...</div>
         ) : filtered.length === 0 ? (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
+          <div className="glass-card rounded-2xl p-12 text-center">
             <ShoppingBag size={36} className="text-gray-700 mx-auto mb-3" />
             <p className="text-gray-400 mb-1">
               {filter === 'ALL' ? 'Você ainda não tem pedidos.' : 'Nenhum pedido nesta categoria.'}

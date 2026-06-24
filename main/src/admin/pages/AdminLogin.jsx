@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
 import { Button } from 'primereact/button'
@@ -63,7 +63,7 @@ const AdminLogin = () => {
   const inputErr = 'w-full bg-gray-800 border border-red-600 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition-colors'
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-transparent text-white flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-4">
@@ -73,7 +73,7 @@ const AdminLogin = () => {
           <p className="text-sm text-gray-400 mt-1">Acesso restrito a administradores</p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8">
+        <div className="glass-card rounded-2xl p-6 sm:p-8">
           {error && (
             <div className="mb-4">
               <Message severity="error" text={error} className="w-full" />

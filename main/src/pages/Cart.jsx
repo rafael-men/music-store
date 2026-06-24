@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ShoppingCart, Trash2, ShoppingBag, Check, Truck, QrCode, LogIn, Plus, Minus } from 'lucide-react'
 import ProductImage from '../Components/ProductImage'
 import { useAuth } from '../contexts/AuthContext'
 import { useCart } from '../contexts/CartContext'
-import { extractErrorMessage } from '../api/client'
+import { extractErrorMessage, extractOrderErrorMessage } from '../api/client'
 import { calculateShipping, isValidCep, extractShippingError } from '../api/shipping-form'
 import { productsApi } from '../api/products'
 import { ordersApi } from '../api/orders'
@@ -13,8 +13,8 @@ const formatBRL = (value) =>
   (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const LoginRequired = () => (
-  <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
-    <div className="w-full max-w-md text-center bg-gray-900 border border-gray-800 rounded-2xl p-8">
+  <div className="min-h-screen bg-transparent text-white flex items-center justify-center px-4 py-12">
+    <div className="w-full max-w-md text-center glass-card rounded-2xl p-8">
       <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
         <ShoppingCart size={22} className="text-white" />
       </div>
@@ -47,6 +47,9 @@ const CartContent = ({ userId }) => {
   const [freteError, setFreteError] = useState('')
   const [ordered, setOrdered] = useState(false)
   const [orderInfo, setOrderInfo] = useState(null)
+  const freteAbortRef = useRef(null)
+
+  useEffect(() => () => freteAbortRef.current?.abort(), [])
 
   const items = cart?.items || []
   const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
@@ -113,7 +116,7 @@ const CartContent = ({ userId }) => {
   }
 
   const handleSelectFrete = (option) => {
-    setFreteSelected(option.id)
+    setFreteSelected(String(option.id))
     setFrete(option.price)
   }
 
@@ -127,6 +130,11 @@ const CartContent = ({ userId }) => {
       setFreteError('Adicione itens ao carrinho primeiro.')
       return
     }
+    // Cancela cálculo anterior em andamento — evita race que aplica resultado de CEP antigo.
+    freteAbortRef.current?.abort()
+    const controller = new AbortController()
+    freteAbortRef.current = controller
+
     setFreteLoading(true)
     try {
       const enriched = await Promise.all(
@@ -139,7 +147,9 @@ const CartContent = ({ userId }) => {
           }
         })
       )
-      const results = await calculateShipping({ toCep: cep, items: enriched })
+      if (controller.signal.aborted) return
+      const results = await calculateShipping({ toCep: cep, items: enriched, signal: controller.signal })
+      if (controller.signal.aborted) return
       setFreteOptions(results)
       if (results.length === 0) {
         setFreteError('Nenhum serviço de entrega disponível para este CEP.')
@@ -147,16 +157,17 @@ const CartContent = ({ userId }) => {
         setFreteCalculado(false)
         return
       }
-      setFreteSelected(results[0].id)
+      setFreteSelected(String(results[0].id))
       setFrete(results[0].price)
       setFreteCalculado(true)
     } catch (err) {
+      if (controller.signal.aborted || err?.name === 'CanceledError') return
       setFreteError(extractShippingError(err))
       setFreteOptions([])
       setFrete(null)
       setFreteCalculado(false)
     } finally {
-      setFreteLoading(false)
+      if (!controller.signal.aborted) setFreteLoading(false)
     }
   }
 
@@ -172,7 +183,7 @@ const CartContent = ({ userId }) => {
     }
     setUpdating(true)
     try {
-      const selectedOption = freteOptions.find((o) => o.id === freteSelected)
+      const selectedOption = freteOptions.find((o) => String(o.id) === freteSelected)
       const created = await ordersApi.create({
         userId,
         paymentMethod: 'PIX',
@@ -194,7 +205,7 @@ const CartContent = ({ userId }) => {
       })
       setOrdered(true)
     } catch (err) {
-      setError(extractErrorMessage(err, 'Falha ao finalizar pedido.'))
+      setError(extractOrderErrorMessage(err, 'Falha ao finalizar pedido.'))
     } finally {
       setUpdating(false)
     }
@@ -202,7 +213,7 @@ const CartContent = ({ userId }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <p className="text-gray-500 text-sm">Carregando carrinho...</p>
       </div>
     )
@@ -210,8 +221,8 @@ const CartContent = ({ userId }) => {
 
   if (ordered) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
+        <div className="glass-card rounded-2xl p-8 max-w-md w-full text-center">
           <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
             <Check size={28} className="text-green-400" />
           </div>
@@ -236,7 +247,7 @@ const CartContent = ({ userId }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-transparent">
       <div className="container mx-auto px-4 py-10 max-w-2xl">
         <div className="flex items-center gap-3 mb-8">
           <ShoppingCart size={24} className="text-white" />
@@ -269,7 +280,7 @@ const CartContent = ({ userId }) => {
           <>
             <div className="space-y-3 mb-6">
               {items.map(item => (
-                <div key={item.productId} className="flex items-center gap-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
+                <div key={item.productId} className="flex items-center gap-4 glass-card rounded-xl p-4">
                   <ProductImage src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover shrink-0 bg-gray-800" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-100 truncate mb-1">{item.name}</p>
@@ -309,7 +320,7 @@ const CartContent = ({ userId }) => {
               ))}
             </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <div className="glass-card rounded-xl p-6">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
                 <Truck size={13} className="inline mr-1.5 mb-0.5" />
                 Calcular Frete
@@ -340,7 +351,7 @@ const CartContent = ({ userId }) => {
               {freteOptions.length > 0 && (
                 <div className="mb-6 max-h-56 overflow-y-auto pr-1 flex flex-col gap-1">
                   {freteOptions.map((opt) => {
-                    const active = freteSelected === opt.id
+                    const active = freteSelected === String(opt.id)
                     return (
                       <button
                         key={opt.id}

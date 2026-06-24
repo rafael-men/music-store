@@ -17,7 +17,7 @@ const LoginPromptModal = ({
     pt={{
       mask: { className: 'bg-black/70 backdrop-blur-sm' },
       root: { className: 'w-full max-w-sm mx-4' },
-      content: { className: 'bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden p-0' },
+      content: { className: 'glass-popover rounded-2xl overflow-hidden p-0' },
     }}
   >
     <div className="relative p-6 text-center">

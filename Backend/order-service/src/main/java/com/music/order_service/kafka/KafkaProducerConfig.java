@@ -29,7 +29,7 @@ public class KafkaProducerConfig {
                 ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true,
                 ProducerConfig.RETRIES_CONFIG, 5,
                 ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5,
-                ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 30000
+                ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 120000
         ));
     }
 

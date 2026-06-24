@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { cartApi } from '../api/cart'
 import { useAuth } from './AuthContext'
 
@@ -10,6 +10,15 @@ export const CartProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth()
   const [cart, setCart] = useState(emptyCart)
   const [loading, setLoading] = useState(false)
+  const lastUserIdRef = useRef(null)
+
+
+  if (lastUserIdRef.current !== (user?.id || null)) {
+    lastUserIdRef.current = user?.id || null
+    if (cart.userId && cart.userId !== (user?.id || null) && cart !== emptyCart) {
+      setCart(emptyCart)
+    }
+  }
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated || !user?.id) {

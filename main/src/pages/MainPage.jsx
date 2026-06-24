@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import Hero from '../Components/Hero'
 import ProductCarousel from '../Components/ProductCarousel'
@@ -64,10 +64,10 @@ const MainPage = () => {
     return () => { cancelled = true }
   }, [])
 
-  const groups = groupProducts(products)
+  const groups = useMemo(() => groupProducts(products), [products])
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-transparent">
       <Hero />
       <div className="container mx-auto px-4 pt-8 pb-16">
         <div className="text-center mb-8 md:mb-10">

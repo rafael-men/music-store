@@ -116,7 +116,6 @@ const EditProfile = () => {
   const { user: authUser, isAuthenticated } = useAuth()
   const fileInputRef = useRef(null)
   const [form, setForm] = useState(emptyForm)
-  const [loadingUser, setLoadingUser] = useState(true)
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(DEFAULT_PHOTO)
   const [photoError, setPhotoError] = useState('')
@@ -128,7 +127,6 @@ const EditProfile = () => {
   useEffect(() => {
     if (!isAuthenticated || !authUser?.id) return
     let cancelled = false
-    setLoadingUser(true)
     authApi
       .getById(authUser.id)
       .then((data) => {
@@ -154,7 +152,6 @@ const EditProfile = () => {
       .catch((err) => {
         if (!cancelled) setError(extractErrorMessage(err, 'Falha ao carregar dados do perfil.'))
       })
-      .finally(() => { if (!cancelled) setLoadingUser(false) })
     return () => { cancelled = true }
   }, [isAuthenticated, authUser?.id])
 
@@ -286,7 +283,7 @@ const EditProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-transparent text-white">
       <div className="container mx-auto px-4 py-10 max-w-2xl">
         <Link
           to="/perfil"
@@ -299,7 +296,7 @@ const EditProfile = () => {
         <h2 className="text-2xl font-bold text-white mb-2">Editar perfil</h2>
         <p className="text-sm text-gray-400 mb-8">Atualize os seus dados pessoais e endereço.</p>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4">
+        <div className="glass-card rounded-2xl p-6 mb-4">
           <div className="flex items-center gap-5">
             <button
               type="button"
@@ -356,7 +353,7 @@ const EditProfile = () => {
           )}
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8">
+        <div className="glass-card rounded-2xl p-6 sm:p-8">
           {error && (
             <div className="mb-4">
               <Message severity="error" text={error} className="w-full" />

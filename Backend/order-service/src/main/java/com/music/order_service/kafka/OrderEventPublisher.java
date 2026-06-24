@@ -2,10 +2,9 @@ package com.music.order_service.kafka;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 public class OrderEventPublisher {
@@ -18,8 +17,10 @@ public class OrderEventPublisher {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+
+    @EventListener
     public void onOrderCreated(OrderCreatedEvent event) {
+        log.info("Publicando OrderCreatedEvent orderId={}", event.orderId());
         kafkaTemplate.send(KafkaTopics.ORDER_CREATED, event.orderId(), event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
@@ -28,8 +29,10 @@ public class OrderEventPublisher {
                 });
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void onOrderStatusChanged(OrderStatusChangedEvent event) {
+        log.info("Publicando OrderStatusChangedEvent orderId={} {}→{}",
+                event.orderId(), event.oldStatus(), event.newStatus());
         kafkaTemplate.send(KafkaTopics.ORDER_STATUS_CHANGED, event.orderId(), event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {

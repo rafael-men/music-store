@@ -49,7 +49,7 @@ const SearchResults = () => {
   const hasFilter = q || category || params.get('min') || params.get('max')
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-transparent text-white">
       <div className="container mx-auto px-4 pt-8 pb-16">
         <div className="border-l-4 border-l-gray-500 pl-4 mb-8">
           <div className="flex items-center gap-2 mb-1">
