@@ -2,10 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import ProductCard from './ProductCard'
 
-const ProductCarousel = ({ title, items }) => {
+const AUTO_SCROLL_INTERVAL = 5000
+
+const ProductCarousel = ({ title, items, compact = false }) => {
   const scrollerRef = useRef(null)
+  const containerRef = useRef(null)
+  const autoTimerRef = useRef(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
   const updateScrollState = () => {
     const el = scrollerRef.current
@@ -34,46 +39,72 @@ const ProductCarousel = ({ title, items }) => {
     el.scrollBy({ left: amount, behavior: 'smooth' })
   }
 
+
+  useEffect(() => {
+    if (hovered || !items || items.length === 0) {
+      clearInterval(autoTimerRef.current)
+      return
+    }
+    autoTimerRef.current = setInterval(() => {
+      const el = scrollerRef.current
+      if (!el) return
+      const maxScroll = el.scrollWidth - el.clientWidth
+      if (el.scrollLeft >= maxScroll - 4) {
+        el.scrollTo({ left: 0, behavior: 'smooth' })
+      } else {
+        el.scrollBy({ left: el.clientWidth * 0.85, behavior: 'smooth' })
+      }
+    }, AUTO_SCROLL_INTERVAL)
+    return () => clearInterval(autoTimerRef.current)
+  }, [hovered, items])
+
   if (!items || items.length === 0) return null
 
+  const itemWidth = compact
+    ? 'w-44 sm:w-40 md:w-44 lg:w-48'
+    : 'w-52 sm:w-44 md:w-40 lg:w-44 xl:w-48'
+
   return (
-    <section className="mb-14 mt-10">
-      <div className="flex items-center mb-5">
-        <h2 className="text-xl font-bold text-white">{title}</h2>
+    <section
+      ref={containerRef}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="mb-10"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h2 className={`font-bold text-white ${compact ? 'text-base' : 'text-xl'}`}>{title}</h2>
+        <div className={`hidden md:flex items-center gap-1 transition-opacity duration-200 ${hovered ? 'opacity-100' : 'opacity-0'}`}>
+          <button
+            type="button"
+            onClick={() => scrollBy(-1)}
+            aria-label="Anterior"
+            disabled={!canScrollLeft}
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-white/10 text-gray-300 bg-white/[0.03] hover:bg-white/10 hover:text-white transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollBy(1)}
+            aria-label="Próximo"
+            disabled={!canScrollRight}
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-white/10 text-gray-300 bg-white/[0.03] hover:bg-white/10 hover:text-white transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
-      <div className="relative md:px-12">
-        <button
-          type="button"
-          onClick={() => scrollBy(-1)}
-          aria-label="Anterior"
-          disabled={!canScrollLeft}
-          className={`hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center rounded-full bg-gray-900 border border-gray-700 text-gray-300 transition-all duration-200 hover:bg-gray-800 hover:border-gray-500 hover:text-white disabled:opacity-0 disabled:pointer-events-none ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <ChevronLeft size={18} />
-        </button>
-
-        <div
-          ref={scrollerRef}
-          className="flex gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-3 scroll-smooth"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {items.map((product) => (
-            <div key={product.id} className="snap-start shrink-0 w-52 sm:w-48 md:w-52 flex">
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => scrollBy(1)}
-          aria-label="Próximo"
-          disabled={!canScrollRight}
-          className={`hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center rounded-full bg-gray-900 border border-gray-700 text-gray-300 transition-all duration-200 hover:bg-gray-800 hover:border-gray-500 hover:text-white disabled:opacity-0 disabled:pointer-events-none ${canScrollRight ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <ChevronRight size={18} />
-        </button>
+      <div
+        ref={scrollerRef}
+        className="flex gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {items.map((product) => (
+          <div key={product.id} className={`snap-start shrink-0 ${itemWidth} flex`}>
+            <ProductCard product={product} />
+          </div>
+        ))}
       </div>
     </section>
   )

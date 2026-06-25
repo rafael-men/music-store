@@ -2,16 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import Hero from '../Components/Hero'
 import ProductCarousel from '../Components/ProductCarousel'
+import CategoryBanners from '../Components/CategoryBanners'
+import ArtistBanners from '../Components/ArtistBanners'
+import ConcertsSection from '../Components/ConcertsSection'
 import { productsApi } from '../api/products'
 import { extractErrorMessage } from '../api/client'
 
 const DEALS_PRICE_LIMIT = 100
-
-const sections = [
-  { key: 'NEW_ARRIVALS', title: 'Recém Chegados',          fallbackCategories: ['NEW_ARRIVALS'] },
-  { key: 'DEATH_METAL',  title: 'Baseado no que você viu', fallbackCategories: ['DEATH_METAL', 'BLACK_METAL'] },
-  { key: 'DAILY_DEALS',  title: 'Ofertas da Semana',        fallbackCategories: ['DAILY_DEALS'] },
-]
 
 const isDeal = (product) => {
   const cats = product.categories || []
@@ -20,26 +17,27 @@ const isDeal = (product) => {
   return false
 }
 
+const matchesCategories = (product, cats) =>
+  (product.categories || []).some((c) => cats.includes(c))
+
 const groupProducts = (products) => {
-  const groups = {}
-  for (const section of sections) {
-    if (section.key === 'DAILY_DEALS') {
-      groups[section.key] = products
-        .filter(isDeal)
-        .sort((a, b) => (a.price || 0) - (b.price || 0))
-        .slice(0, 12)
-      continue
-    }
-    groups[section.key] = products.filter((p) =>
-      (p.categories || []).some((c) => section.fallbackCategories.includes(c))
-    )
+  const featured = products
+    .filter((p) => matchesCategories(p, ['NEW_ARRIVALS']))
+    .slice(0, 14)
+  const deals = products
+    .filter(isDeal)
+    .sort((a, b) => (a.price || 0) - (b.price || 0))
+    .slice(0, 10)
+  const recommended = products
+    .filter((p) => matchesCategories(p, ['DEATH_METAL', 'BLACK_METAL', 'HEAVY_METAL']))
+    .slice(0, 10)
+
+ 
+  return {
+    featured:    featured.length    ? featured    : products.slice(0, 14),
+    deals:       deals.length       ? deals       : products.slice(0, 10),
+    recommended: recommended.length ? recommended : products.slice(10, 20),
   }
-  for (const section of sections) {
-    if (groups[section.key].length === 0) {
-      groups[section.key] = products.slice(0, 8)
-    }
-  }
-  return groups
 }
 
 const MainPage = () => {
@@ -91,9 +89,18 @@ const MainPage = () => {
           </div>
         )}
 
-        {!loading && !error && products.length > 0 && sections.map(({ key, title }) => (
-          <ProductCarousel key={key} title={title} items={groups[key] || []} />
-        ))}
+        {!loading && !error && products.length > 0 && (
+          <>
+            <ProductCarousel title="Recém Chegados" items={groups.featured} />
+            <CategoryBanners />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mt-2">
+              <ProductCarousel title="Ofertas da Semana" items={groups.deals} compact />
+              <ProductCarousel title="Baseado no que você viu" items={groups.recommended} compact />
+            </div>
+            <ArtistBanners />
+            <ConcertsSection />
+          </>
+        )}
       </div>
     </div>
   )

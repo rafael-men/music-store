@@ -1,9 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Tag } from 'lucide-react'
+import { Tag, SlidersHorizontal, X } from 'lucide-react'
 import ProductCard from '../Components/ProductCard'
 import { productsApi } from '../api/products'
 import { extractErrorMessage } from '../api/client'
+import CategoryFilters from './category/CategoryFilters'
+import {
+  getOrigin,
+  getCondition,
+  availableGenres,
+  hasGenre,
+  availableMerchTypes,
+  getMerchType,
+} from '../utils/productFilters'
 
 const categoryMeta = {
   'black-metal':               { label: 'Black Metal',                  category: 'BLACK_METAL',           accent: 'text-purple-400',  border: 'border-purple-500/20', description: 'O som mais sombrio e atmosférico do metal extremo.' },
@@ -17,6 +26,19 @@ const categoryMeta = {
   'metal-progressivo':         { label: 'Metal Progressivo',            category: 'PROG_METAL',            accent: 'text-indigo-400',  border: 'border-indigo-500/20', description: 'Estruturas complexas, virtuosismo técnico e atmosferas conceituais.' },
 }
 
+const MUSIC_CATEGORIES = new Set(['CD', 'VINYL'])
+const MERCH_CATEGORIES = new Set(['OFFICIAL_MERCHANDISE'])
+
+const initialFilters = {
+  search: '',
+  origin: 'ALL',
+  condition: 'ALL',
+  minPrice: '',
+  maxPrice: '',
+  genres: [],
+  merchTypes: [],
+}
+
 const CategoryPage = () => {
   const { slug } = useParams()
   const meta = categoryMeta[slug]
@@ -24,6 +46,8 @@ const CategoryPage = () => {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [filters, setFilters] = useState(initialFilters)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     if (!meta) {
@@ -33,6 +57,7 @@ const CategoryPage = () => {
     let cancelled = false
     setLoading(true)
     setError('')
+    setFilters(initialFilters)
     productsApi
       .list({ category: meta.category })
       .then((data) => {
@@ -46,6 +71,39 @@ const CategoryPage = () => {
       })
     return () => { cancelled = true }
   }, [meta])
+
+  const isMusic = meta && MUSIC_CATEGORIES.has(meta.category)
+  const isMerch = meta && MERCH_CATEGORIES.has(meta.category)
+
+  const priceRange = useMemo(() => {
+    if (products.length === 0) return { min: 0, max: 0 }
+    const prices = products.map((p) => p.price || 0)
+    return { min: Math.min(...prices), max: Math.max(...prices) }
+  }, [products])
+
+  const genres = useMemo(() => (isMusic ? availableGenres(products) : []), [products, isMusic])
+  const merchTypes = useMemo(() => (isMerch ? availableMerchTypes(products) : []), [products, isMerch])
+
+  const filtered = useMemo(() => {
+    const search = filters.search.trim().toLowerCase()
+    const min = filters.minPrice ? Number(filters.minPrice) : null
+    const max = filters.maxPrice ? Number(filters.maxPrice) : null
+    return products.filter((p) => {
+      if (search && !(p.title || '').toLowerCase().includes(search)) return false
+      if (min != null && (p.price || 0) < min) return false
+      if (max != null && (p.price || 0) > max) return false
+      if (filters.origin !== 'ALL' && getOrigin(p) !== filters.origin) return false
+      if (filters.condition !== 'ALL' && getCondition(p) !== filters.condition) return false
+      if (filters.genres.length > 0 && !filters.genres.some((g) => hasGenre(p, g))) return false
+      if (filters.merchTypes.length > 0) {
+        const type = getMerchType(p)
+        if (!type || !filters.merchTypes.includes(type)) return false
+      }
+      return true
+    })
+  }, [products, filters])
+
+  const resetFilters = () => setFilters(initialFilters)
 
   if (!meta) {
     return (
@@ -82,14 +140,73 @@ const CategoryPage = () => {
         )}
 
         {!loading && !error && products.length > 0 && (
-          <>
-            <p className="text-xs text-gray-500 mb-6">{products.length} {products.length === 1 ? 'produto' : 'produtos'}</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+            <div className="hidden lg:block">
+              <CategoryFilters
+                filters={filters}
+                setFilters={setFilters}
+                priceRange={priceRange}
+                genres={genres}
+                merchTypes={merchTypes}
+                onReset={resetFilters}
+              />
             </div>
-          </>
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs text-gray-500">
+                  {filtered.length} de {products.length} {products.length === 1 ? 'produto' : 'produtos'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(true)}
+                  className="lg:hidden inline-flex items-center gap-1.5 text-xs font-medium text-gray-300 bg-white/[0.05] border border-white/[0.1] px-3 py-1.5 rounded-lg hover:bg-white/10"
+                >
+                  <SlidersHorizontal size={13} />
+                  Filtros
+                </button>
+              </div>
+
+              {filtered.length === 0 ? (
+                <div className="text-center py-16 text-gray-500 text-sm">
+                  Nenhum produto corresponde aos filtros aplicados.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {filtered.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm lg:hidden flex"
+            onClick={() => setMobileOpen(false)}
+          >
+            <div
+              className="ml-auto w-80 max-w-[85vw] h-full overflow-y-auto bg-gray-900 border-l border-white/10 p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-white">Filtros</h3>
+                <button type="button" onClick={() => setMobileOpen(false)} aria-label="Fechar">
+                  <X size={20} className="text-gray-400 hover:text-white" />
+                </button>
+              </div>
+              <CategoryFilters
+                filters={filters}
+                setFilters={setFilters}
+                priceRange={priceRange}
+                genres={genres}
+                merchTypes={merchTypes}
+                onReset={resetFilters}
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>
