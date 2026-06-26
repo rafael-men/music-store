@@ -22,12 +22,14 @@ public class OwnerInterceptor implements HandlerInterceptor {
             return false;
         }
 
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(request.getHeader("X-User-Role"));
+
         @SuppressWarnings("unchecked")
         Map<String, String> pathVars = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
 
         if (pathVars != null) {
             String pathUserId = pathVars.get("userId");
-            if (pathUserId != null && !pathUserId.equals(authenticatedUserId)) {
+            if (pathUserId != null && !isAdmin && !pathUserId.equals(authenticatedUserId)) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setContentType("application/json");
                 response.getWriter().write("{\"error\":\"Acesso negado às notificações de outro usuário\"}");

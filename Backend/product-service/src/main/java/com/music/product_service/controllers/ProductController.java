@@ -79,4 +79,14 @@ public class ProductController {
                 id, dto.quantity(), updated.stockQuantity());
         return ResponseEntity.ok(updated);
     }
+
+    @PostMapping("/{id}/release")
+    public ResponseEntity<ProductResponseDTO> releaseStock(
+            @PathVariable String id,
+            @RequestBody @Valid StockReservationDTO dto) {
+        ProductResponseDTO updated = productService.releaseStock(id, dto.quantity());
+        audit.info("action=RELEASE_STOCK productId={} quantity={} remaining={}",
+                id, dto.quantity(), updated.stockQuantity());
+        return ResponseEntity.ok(updated);
+    }
 }

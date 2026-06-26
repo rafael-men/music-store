@@ -4,6 +4,7 @@ import com.music.auth_service.dtos.AuthResponse;
 import com.music.auth_service.dtos.LoginRequest;
 import com.music.auth_service.dtos.RegisterRequest;
 import com.music.auth_service.dtos.UserResponse;
+import com.music.auth_service.exceptions.EmailAlreadyExistsException;
 import com.music.auth_service.models.User;
 import com.music.auth_service.security.CustomUserDetails;
 import com.music.auth_service.security.JwtService;
@@ -37,7 +38,15 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        UserResponse userResponse = userService.register(request);
+        UserResponse userResponse;
+        try {
+            userResponse = userService.register(request);
+        } catch (EmailAlreadyExistsException ex) {
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(new AuthResponse(
+                    null, null, null, null, null
+            ));
+        }
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );

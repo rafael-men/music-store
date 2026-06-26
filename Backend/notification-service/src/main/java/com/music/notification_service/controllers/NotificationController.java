@@ -18,8 +18,11 @@ public class NotificationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<NotificationResponseDTO> findById(@PathVariable String id) {
-        return ResponseEntity.ok(notificationService.findById(id));
+    public ResponseEntity<NotificationResponseDTO> findById(
+            @PathVariable String id,
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        return ResponseEntity.ok(notificationService.findById(id, userId, "ADMIN".equalsIgnoreCase(role)));
     }
 
     @GetMapping("/user/{userId}")
@@ -33,7 +36,10 @@ public class NotificationController {
     }
 
     @PatchMapping("/{id}/read")
-    public ResponseEntity<NotificationResponseDTO> markAsRead(@PathVariable String id) {
-        return ResponseEntity.ok(notificationService.markAsRead(id));
+    public ResponseEntity<NotificationResponseDTO> markAsRead(
+            @PathVariable String id,
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        return ResponseEntity.ok(notificationService.markAsRead(id, userId, "ADMIN".equalsIgnoreCase(role)));
     }
 }

@@ -17,7 +17,7 @@ public class AdminInterceptor implements HandlerInterceptor {
         }
 
         String uri = request.getRequestURI();
-        if ("POST".equalsIgnoreCase(method) && uri != null && uri.matches("^/products/[^/]+/reserve$")) {
+        if ("POST".equalsIgnoreCase(method) && uri != null && uri.matches("^/products/[^/]+/(reserve|release)$")) {
             return true;
         }
 

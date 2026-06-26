@@ -6,8 +6,8 @@ import java.util.List;
 
 public interface NotificationService {
 
-    NotificationResponseDTO findById(String id);
+    NotificationResponseDTO findById(String id, String authenticatedUserId, boolean isAdmin);
     List<NotificationResponseDTO> findByUserId(String userId);
     List<NotificationResponseDTO> findUnreadByUserId(String userId);
-    NotificationResponseDTO markAsRead(String id);
+    NotificationResponseDTO markAsRead(String id, String authenticatedUserId, boolean isAdmin);
 }

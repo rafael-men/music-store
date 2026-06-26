@@ -30,14 +30,8 @@ public class OrderSecurityInterceptor implements HandlerInterceptor {
         boolean isTrackingUpdate = "PATCH".equalsIgnoreCase(method) && path.contains("/tracking");
         boolean isListAll = "GET".equalsIgnoreCase(method) && ("/orders".equals(path) || "/orders/".equals(path));
 
-        @SuppressWarnings("unchecked")
-        Map<String, String> pathVars = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
-        boolean isGetById = "GET".equalsIgnoreCase(method)
-                && pathVars != null
-                && pathVars.containsKey("id")
-                && !pathVars.containsKey("userId");
-
-        if (isStatusUpdate || isTrackingUpdate || isListAll || isGetById) {
+        
+        if (isStatusUpdate || isTrackingUpdate || isListAll) {
             if (!isAdmin) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setContentType("application/json");
@@ -47,7 +41,12 @@ public class OrderSecurityInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // Rotas escopo de dono: /orders/user/{userId} — só o próprio (admin pode tudo)
+       
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> pathVars = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+
+        
         if (pathVars != null) {
             String pathUserId = pathVars.get("userId");
             if (pathUserId != null && !isAdmin && !pathUserId.equals(authenticatedUserId)) {

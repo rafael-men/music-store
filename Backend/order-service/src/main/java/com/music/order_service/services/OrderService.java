@@ -8,8 +8,8 @@ import com.music.order_service.models.OrderStatus;
 import java.util.List;
 
 public interface OrderService {
-    OrderResponseDTO create(OrderRequestDTO dto);
-    OrderResponseDTO findById(String id);
+    OrderResponseDTO create(String authenticatedUserId, OrderRequestDTO dto);
+    OrderResponseDTO findById(String id, String authenticatedUserId, boolean isAdmin);
     List<OrderResponseDTO> findAll();
     List<OrderResponseDTO> findByUserId(String userId);
     OrderResponseDTO updateStatus(String id, OrderStatus status);

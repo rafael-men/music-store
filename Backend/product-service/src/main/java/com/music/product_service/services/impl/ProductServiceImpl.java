@@ -101,11 +101,32 @@ public class ProductServiceImpl implements ProductService {
                 return ProductResponseDTO.from(saved);
             } catch (OptimisticLockingFailureException ex) {
                 lastEx = ex;
-                // Outra requisição alterou o produto entre nossa leitura e gravação — recarrega e tenta de novo.
             }
         }
         throw lastEx != null
                 ? lastEx
                 : new IllegalStateException("Falha ao reservar estoque após múltiplas tentativas");
+    }
+
+    @Override
+    public ProductResponseDTO releaseStock(String id, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantidade a liberar deve ser positiva");
+        }
+        OptimisticLockingFailureException lastEx = null;
+        for (int attempt = 0; attempt < RESERVE_MAX_RETRIES; attempt++) {
+            Product product = productRepository.findById(id)
+                    .orElseThrow(() -> new ProductNotFoundException(id));
+            product.setStockQuantity(product.getStockQuantity() + quantity);
+            try {
+                Product saved = productRepository.save(product);
+                return ProductResponseDTO.from(saved);
+            } catch (OptimisticLockingFailureException ex) {
+                lastEx = ex;
+            }
+        }
+        throw lastEx != null
+                ? lastEx
+                : new IllegalStateException("Falha ao liberar estoque após múltiplas tentativas");
     }
 }

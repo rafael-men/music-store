@@ -16,4 +16,5 @@ public interface ProductService {
     ProductResponseDTO update(String id, ProductRequestDTO dto);
     void delete(String id);
     ProductResponseDTO reserveStock(String id, int quantity);
+    ProductResponseDTO releaseStock(String id, int quantity);
 }

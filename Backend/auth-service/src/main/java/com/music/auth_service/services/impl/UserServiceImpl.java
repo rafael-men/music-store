@@ -33,13 +33,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse register(RegisterRequest request) {
-        validateEmailAvailable(request.email());
+        String email = normalizeEmail(request.email());
+        validateEmailAvailable(email);
         Optional.ofNullable(request.cpf()).ifPresent(this::validateCpfAvailable);
 
         User user = new User(
                 null,
                 request.name(),
-                request.email(),
+                email,
                 passwordEncoder.encode(request.password()),
                 request.cpf(),
                 request.profilePhotoUrl(),
@@ -59,7 +60,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse findByEmail(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmail(normalizeEmail(email))
                 .map(UserResponse::from)
                 .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
     }
@@ -127,6 +128,10 @@ public class UserServiceImpl implements UserService {
         return user.getFavoriteProductIds();
     }
 
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
+    }
+
     private void validateEmailAvailable(String email) {
         if (userRepository.existsByEmail(email)) throw new EmailAlreadyExistsException(email);
     }
@@ -137,6 +142,7 @@ public class UserServiceImpl implements UserService {
 
     private void applyEmailUpdate(UpdateUserRequest request, User user) {
         Optional.ofNullable(request.email())
+                .map(this::normalizeEmail)
                 .filter(e -> !e.equals(user.getEmail()))
                 .ifPresent(e -> {
                     validateEmailAvailable(e);

@@ -23,7 +23,10 @@ const matchesCategories = (product, cats) =>
 const groupProducts = (products) => {
   const featured = products
     .filter((p) => matchesCategories(p, ['NEW_ARRIVALS']))
-    .slice(0, 14)
+    .slice(0, 10)
+  const brazilian = products
+    .filter((p) => matchesCategories(p, ['BRAZILLIAN_MUSIC']))
+    .slice(0, 10)
   const deals = products
     .filter(isDeal)
     .sort((a, b) => (a.price || 0) - (b.price || 0))
@@ -32,9 +35,10 @@ const groupProducts = (products) => {
     .filter((p) => matchesCategories(p, ['DEATH_METAL', 'BLACK_METAL', 'HEAVY_METAL']))
     .slice(0, 10)
 
- 
+
   return {
-    featured:    featured.length    ? featured    : products.slice(0, 14),
+    featured:    featured.length    ? featured    : products.slice(0, 10),
+    brazilian:   brazilian.length   ? brazilian   : products.slice(10, 20),
     deals:       deals.length       ? deals       : products.slice(0, 10),
     recommended: recommended.length ? recommended : products.slice(10, 20),
   }
@@ -91,7 +95,10 @@ const MainPage = () => {
 
         {!loading && !error && products.length > 0 && (
           <>
-            <ProductCarousel title="Recém Chegados" items={groups.featured} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+              <ProductCarousel title="Recém Chegados" items={groups.featured} compact />
+              <ProductCarousel title="O melhor da música brasileira" items={groups.brazilian} compact />
+            </div>
             <CategoryBanners />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mt-2">
               <ProductCarousel title="Ofertas da Semana" items={groups.deals} compact />
