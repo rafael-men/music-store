@@ -18,6 +18,7 @@ import SearchResults from './pages/SearchResults';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import EditProfile from './pages/auth/EditProfile';
+import Addresses from './pages/auth/Addresses';
 import MyOrders from './pages/orders/MyOrders';
 import AdminLogin from './admin/pages/AdminLogin';
 import AdminLayout from './admin/components/AdminLayout';
@@ -55,6 +56,7 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/perfil/editar" element={<EditProfile />} />
+                  <Route path="/perfil/enderecos" element={<Addresses />} />
                   <Route path="/perfil/pedidos" element={<MyOrders />} />
                 </Route>
 

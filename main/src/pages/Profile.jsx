@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Package, ChevronRight, LogOut, Pencil, LogIn, User as UserIcon } from 'lucide-react'
+import { Package, MapPin, ChevronRight, LogOut, Pencil, LogIn, User as UserIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { authApi } from '../api/auth'
 import NotificationsCard from './profile/NotificationsCard'
@@ -55,6 +55,7 @@ const ProfileContent = ({ authUser, onLogout }) => {
 
   const menuItems = [
     { label: 'Meus Pedidos', Icon: Package, to: '/perfil/pedidos' },
+    { label: 'Meus Endereços', Icon: MapPin, to: '/perfil/enderecos' },
   ]
 
   return (
