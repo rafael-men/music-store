@@ -72,6 +72,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   const logout = () => {
+    authApi.logout().catch(() => {})
     tokenStorage.clear()
     setUser(null)
   }

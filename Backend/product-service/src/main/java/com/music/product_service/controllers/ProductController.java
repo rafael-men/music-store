@@ -8,11 +8,13 @@ import com.music.product_service.services.ProductService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/products")
@@ -41,14 +43,31 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponseDTO>> findAll(
+    public ResponseEntity<?> findAll(
             @RequestHeader(value = "X-User-Role", required = false) String role,
             @RequestParam(required = false) ProductCategory category,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(defaultValue = "false") boolean paginated) {
         boolean includeOutOfStock = "ADMIN".equalsIgnoreCase(role);
-        if (category != null) return ResponseEntity.ok(productService.findByCategory(category, includeOutOfStock));
-        if (search != null) return ResponseEntity.ok(productService.search(search, includeOutOfStock));
-        return ResponseEntity.ok(productService.findAll(includeOutOfStock));
+
+       
+        int safeSize = Math.min(Math.max(size, 1), 200);
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "_id"));
+
+        Page<ProductResponseDTO> result;
+        if (category != null) {
+            result = productService.findByCategory(category, includeOutOfStock, pageable);
+        } else if (search != null) {
+            result = productService.search(search, includeOutOfStock, pageable);
+        } else {
+            result = productService.findAll(includeOutOfStock, pageable);
+        }
+
+        if (!paginated) return ResponseEntity.ok(result.getContent());
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/{id}")

@@ -1,5 +1,6 @@
 package com.music.product_service.services.impl;
 
+import com.music.product_service.config.CacheConfig;
 import com.music.product_service.dtos.ProductRequestDTO;
 import com.music.product_service.dtos.ProductResponseDTO;
 import com.music.product_service.exceptions.OutOfStockException;
@@ -8,7 +9,12 @@ import com.music.product_service.models.Product;
 import com.music.product_service.models.ProductCategory;
 import com.music.product_service.repositories.ProductRepository;
 import com.music.product_service.services.ProductService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = { @CacheEvict(value = CacheConfig.PRODUCT_LISTS, allEntries = true) })
     public ProductResponseDTO create(ProductRequestDTO dto) {
         Product product = new Product(null, dto.title(), dto.description(), dto.price(),
                 dto.imageUrl(), dto.categories(), dto.maxInstallments(), dto.stockQuantity(), Boolean.TRUE.equals(dto.available()));
@@ -32,9 +39,46 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = CacheConfig.PRODUCT_BY_ID, key = "#id")
     public ProductResponseDTO findById(String id) {
         return ProductResponseDTO.from(productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id)));
+    }
+
+    @Override
+    @Cacheable(
+        value = CacheConfig.PRODUCT_LISTS,
+        key = "'all:' + #includeOutOfStock + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort"
+    )
+    public Page<ProductResponseDTO> findAll(boolean includeOutOfStock, Pageable pageable) {
+        Page<Product> page = includeOutOfStock
+                ? productRepository.findAll(pageable)
+                : productRepository.findByStockQuantityGreaterThan(0, pageable);
+        return page.map(ProductResponseDTO::from);
+    }
+
+    @Override
+    @Cacheable(
+        value = CacheConfig.PRODUCT_LISTS,
+        key = "'cat:' + #category + ':' + #includeOutOfStock + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
+    )
+    public Page<ProductResponseDTO> findByCategory(ProductCategory category, boolean includeOutOfStock, Pageable pageable) {
+        Page<Product> page = includeOutOfStock
+                ? productRepository.findByCategoriesContaining(category, pageable)
+                : productRepository.findByCategoriesContainingAndStockQuantityGreaterThan(category, 0, pageable);
+        return page.map(ProductResponseDTO::from);
+    }
+
+    @Override
+    @Cacheable(
+        value = CacheConfig.PRODUCT_LISTS,
+        key = "'search:' + #title.toLowerCase() + ':' + #includeOutOfStock + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
+    )
+    public Page<ProductResponseDTO> search(String title, boolean includeOutOfStock, Pageable pageable) {
+        Page<Product> page = includeOutOfStock
+                ? productRepository.findByTitleContainingIgnoreCase(title, pageable)
+                : productRepository.findByTitleContainingIgnoreCaseAndStockQuantityGreaterThan(title, 0, pageable);
+        return page.map(ProductResponseDTO::from);
     }
 
     @Override
@@ -46,22 +90,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductResponseDTO> findByCategory(ProductCategory category, boolean includeOutOfStock) {
-        return productRepository.findByCategoriesContaining(category).stream()
-                .filter(p -> includeOutOfStock || p.getStockQuantity() > 0)
-                .map(ProductResponseDTO::from)
-                .toList();
-    }
-
-    @Override
-    public List<ProductResponseDTO> search(String title, boolean includeOutOfStock) {
-        return productRepository.findByTitleContainingIgnoreCase(title).stream()
-                .filter(p -> includeOutOfStock || p.getStockQuantity() > 0)
-                .map(ProductResponseDTO::from)
-                .toList();
-    }
-
-    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.PRODUCT_BY_ID, key = "#id"),
+            @CacheEvict(value = CacheConfig.PRODUCT_LISTS, allEntries = true)
+    })
     public ProductResponseDTO update(String id, ProductRequestDTO dto) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
@@ -77,12 +109,20 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.PRODUCT_BY_ID, key = "#id"),
+            @CacheEvict(value = CacheConfig.PRODUCT_LISTS, allEntries = true)
+    })
     public void delete(String id) {
         if (!productRepository.existsById(id)) throw new ProductNotFoundException(id);
         productRepository.deleteById(id);
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.PRODUCT_BY_ID, key = "#id"),
+            @CacheEvict(value = CacheConfig.PRODUCT_LISTS, allEntries = true)
+    })
     public ProductResponseDTO reserveStock(String id, int quantity) {
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantidade a reservar deve ser positiva");
@@ -109,6 +149,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.PRODUCT_BY_ID, key = "#id"),
+            @CacheEvict(value = CacheConfig.PRODUCT_LISTS, allEntries = true)
+    })
     public ProductResponseDTO releaseStock(String id, int quantity) {
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantidade a liberar deve ser positiva");

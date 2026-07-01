@@ -26,6 +26,9 @@ jwt:
   issuer: ${JWT_ISSUER:music-store}
   audience: ${JWT_AUDIENCE:music-store-api}
 
+internal:
+  secret: ${INTERNAL_SECRET:dev-internal-secret-change-me}
+
 server:
   port: 8081
   tomcat:

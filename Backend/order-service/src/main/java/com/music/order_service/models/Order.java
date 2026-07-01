@@ -24,6 +24,10 @@ public class Order {
     private double shippingCost;
     private String shippingService;
 
+
+    private String customerName;
+    private String customerEmail;
+
     public Order() {
         this.createdAt = LocalDateTime.now();
         this.status = OrderStatus.PENDING;
@@ -85,4 +89,10 @@ public class Order {
 
     public String getShippingService() { return shippingService; }
     public void setShippingService(String shippingService) { this.shippingService = shippingService; }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
 }

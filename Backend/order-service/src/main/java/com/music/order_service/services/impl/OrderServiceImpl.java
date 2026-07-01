@@ -1,7 +1,9 @@
 package com.music.order_service.services.impl;
 
+import com.music.order_service.clients.AuthClient;
 import com.music.order_service.clients.ProductClient;
 import com.music.order_service.clients.ProductSnapshot;
+import com.music.order_service.clients.UserSnapshot;
 import com.music.order_service.dtos.OrderRequestDTO;
 import com.music.order_service.dtos.OrderResponseDTO;
 import com.music.order_service.dtos.TrackingUpdateDTO;
@@ -31,13 +33,16 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final ProductClient productClient;
+    private final AuthClient authClient;
 
     public OrderServiceImpl(OrderRepository orderRepository,
                             ApplicationEventPublisher eventPublisher,
-                            ProductClient productClient) {
+                            ProductClient productClient,
+                            AuthClient authClient) {
         this.orderRepository = orderRepository;
         this.eventPublisher = eventPublisher;
         this.productClient = productClient;
+        this.authClient = authClient;
     }
 
     @Override
@@ -81,6 +86,13 @@ public class OrderServiceImpl implements OrderService {
             if (dto.shippingCarrier() != null && !dto.shippingCarrier().isBlank()) {
                 order.setCarrier(dto.shippingCarrier());
             }
+
+            UserSnapshot user = authClient.getUser(authenticatedUserId, "USER");
+            if (user != null) {
+                order.setCustomerName(user.name());
+                order.setCustomerEmail(user.email());
+            }
+
             Order saved = orderRepository.save(order);
 
             eventPublisher.publishEvent(new OrderCreatedEvent(
@@ -114,6 +126,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<OrderResponseDTO> findAll() {
         return orderRepository.findAll().stream().map(OrderResponseDTO::from).toList();
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<OrderResponseDTO> findAllPaginated(
+            org.springframework.data.domain.Pageable pageable) {
+        return orderRepository.findAll(pageable).map(OrderResponseDTO::from);
     }
 
     @Override

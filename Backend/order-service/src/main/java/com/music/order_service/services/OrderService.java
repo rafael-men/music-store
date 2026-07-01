@@ -11,6 +11,7 @@ public interface OrderService {
     OrderResponseDTO create(String authenticatedUserId, OrderRequestDTO dto);
     OrderResponseDTO findById(String id, String authenticatedUserId, boolean isAdmin);
     List<OrderResponseDTO> findAll();
+    org.springframework.data.domain.Page<OrderResponseDTO> findAllPaginated(org.springframework.data.domain.Pageable pageable);
     List<OrderResponseDTO> findByUserId(String userId);
     OrderResponseDTO updateStatus(String id, OrderStatus status);
     OrderResponseDTO updateTracking(String id, TrackingUpdateDTO dto);

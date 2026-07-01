@@ -6,6 +6,9 @@ import com.music.order_service.dtos.TrackingUpdateDTO;
 import com.music.order_service.models.OrderStatus;
 import com.music.order_service.services.OrderService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,9 +33,17 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<OrderResponseDTO>> findAll() {
-        // OrderSecurityInterceptor já garante que só ADMIN passa.
-        return ResponseEntity.ok(orderService.findAll());
+    public ResponseEntity<?> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "false") boolean paginated) {
+        if (!paginated) {
+            return ResponseEntity.ok(orderService.findAll());
+        }
+        int safeSize = Math.min(Math.max(size, 1), 200);
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return ResponseEntity.ok(orderService.findAllPaginated(pageable));
     }
 
     @GetMapping("/{id}")
@@ -46,19 +57,16 @@ public class OrderController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<OrderResponseDTO>> findByUser(@PathVariable String userId) {
-        // OrderSecurityInterceptor valida ownership/admin via pathVar userId.
         return ResponseEntity.ok(orderService.findByUserId(userId));
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<OrderResponseDTO> updateStatus(@PathVariable String id, @RequestParam OrderStatus status) {
-        // OrderSecurityInterceptor já restringe PATCH a ADMIN.
         return ResponseEntity.ok(orderService.updateStatus(id, status));
     }
 
     @PatchMapping("/{id}/tracking")
     public ResponseEntity<OrderResponseDTO> updateTracking(@PathVariable String id, @RequestBody @Valid TrackingUpdateDTO dto) {
-        // OrderSecurityInterceptor já restringe PATCH a ADMIN.
         return ResponseEntity.ok(orderService.updateTracking(id, dto));
     }
 }

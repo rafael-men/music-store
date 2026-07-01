@@ -11,6 +11,8 @@ import java.util.List;
 public record OrderResponseDTO(
         String id,
         String userId,
+        String customerName,
+        String customerEmail,
         List<OrderItem> items,
         double total,
         double shippingCost,
@@ -27,6 +29,8 @@ public record OrderResponseDTO(
         return new OrderResponseDTO(
                 order.getId(),
                 order.getUserId(),
+                order.getCustomerName(),
+                order.getCustomerEmail(),
                 order.getItems(),
                 order.getTotal(),
                 order.getShippingCost(),

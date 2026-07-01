@@ -1,5 +1,6 @@
 package com.microsservices.api_gateway.filter;
 
+import com.microsservices.api_gateway.client.AuthRevocationClient;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -17,6 +18,12 @@ import java.util.regex.Pattern;
 
 @Component
 public class JwtAuthGatewayFilter {
+
+    private final AuthRevocationClient revocationClient;
+
+    public JwtAuthGatewayFilter(AuthRevocationClient revocationClient) {
+        this.revocationClient = revocationClient;
+    }
 
     private static final List<Pattern> PUBLIC_PATHS = List.of(
             Pattern.compile("^/users/register$"),
@@ -45,8 +52,6 @@ public class JwtAuthGatewayFilter {
 
     public HandlerFilterFunction<ServerResponse, ServerResponse> filter() {
         return (request, next) -> {
-            // CORS preflight: deixa o handler de CORS responder. Sem isso, o navegador bloqueia
-            // todas as requisições POST/PUT/DELETE/PATCH que exigem Authorization.
             if ("OPTIONS".equalsIgnoreCase(request.method().name())) {
                 return next.handle(request);
             }
@@ -70,12 +75,19 @@ public class JwtAuthGatewayFilter {
                 String userId = claims.getSubject();
                 String email = claims.get("email", String.class);
                 String role = claims.get("role", String.class);
+                String jti = claims.getId();
 
                 String method = request.method().name();
                 boolean isMutation = !"GET".equalsIgnoreCase(method) && !"OPTIONS".equalsIgnoreCase(method);
+                boolean isLogout = "/users/logout".equals(request.uri().getPath());
                 if (isMutation && (userId == null || userId.isBlank())) {
                     return ServerResponse.status(HttpStatus.UNAUTHORIZED)
                             .body("{\"error\":\"Token sem identificação de usuário\"}");
+                }
+
+                if (isMutation && !isLogout && revocationClient.isRevoked(jti)) {
+                    return ServerResponse.status(HttpStatus.UNAUTHORIZED)
+                            .body("{\"error\":\"Sessão encerrada — faça login novamente\"}");
                 }
 
                 ServerRequest mutatedRequest = ServerRequest.from(request)
